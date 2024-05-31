@@ -1,4 +1,4 @@
-const { USER_SECURE_DATA, ACCOUNTS } = require('../helper/collection-name');
+const { USER_SECURE_DATA, ACCOUNTS, STORES } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 
@@ -10,7 +10,7 @@ module.exports = {
         console.log("dfsdfsd")
         delete data.password;
         return new Promise((resolve,reject)=>{
-            getdb(ACCOUNTS).insertOne(data,(err,result)=>{
+            getdb(ACCOUNTS).insertOne(data,async(err,result)=>{
                 if(err){
                     return reject(err);
                 }
@@ -20,9 +20,8 @@ module.exports = {
                     created_at:new Date(),
                     updated_at:new Date()
                 }
-                getdb(USER_SECURE_DATA).insertOne(seInfo,(err,result)=>{ 
-
-                })
+                await getdb(USER_SECURE_DATA).insertOne(seInfo);
+                //await getdb(STORES).insertOne()
                 return resolve(data);
             })
         })

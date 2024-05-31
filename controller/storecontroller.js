@@ -31,5 +31,21 @@ router.put('/:store_id', validation.updateValidation(), (req, res, next) => {
       .catch((err) => {
         next(err);
       });
-  });
+});
+router.get('/:id',(req,res,next)=>{
+  storeBusinessLayer.getStoreById(req.params).then((data)=>{
+    res.send(data)
+  })
+  .catch((err)=>{
+    next(err);
+  })
+});
+router.get('/account/:account_id',(req,res,next)=>{
+  storeBusinessLayer.getStoreByAccountId(req.params).then((data)=>{
+    res.send(data)
+  })
+  .catch((err)=>{
+    next(err);
+  })
+});
 module.exports = router;

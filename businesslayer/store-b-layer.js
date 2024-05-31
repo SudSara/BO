@@ -33,6 +33,33 @@ module.exports = {
                     return reject(err);
                 }
                 return resolve({success:true,body});
+            });
+        })
+    },
+    getStoreById(params){
+        return new Promise((resolve,reject)=>{
+            getdb(STORES).findOne({_id:ObjectId(params.id)},(err,result)=>{
+                if(err){
+                    return reject(err);
+                }
+                return resolve({success:true,result});
+            });
+        })
+    },
+    getStoreByAccountId(params){
+        return new Promise((resolve,reject)=>{
+            let query =[
+                {
+                  '$match': {
+                    'account_id': ObjectId(params.account_id)
+                  }
+                }
+              ]
+            getdb(STORES).aggregate(query).toArray((err,result)=>{
+                if(err){
+                    return reject(err)
+                }
+                return resolve({success:true,result});
             })
         })
     }

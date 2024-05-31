@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const loginDBLayer = require('../databaselayer/login-db-layer');
-const { ACCOUNTS } = require('../helper/collection-name');
+const { ACCOUNTS, STORES } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 
@@ -155,7 +155,7 @@ module.exports = {
       }
     });
   },
-  v2(req) {
+   v2(req) {
     return new Promise(async(resolve, reject) => {
       try{
        // let c_info = await company_info(req.get('host'));
@@ -182,7 +182,7 @@ module.exports = {
             $lookup: {
               from: 'UserSecureData',
               localField: '_id',
-              foreignField: 'account_id',
+              foreignField: 'store_id',
               as: 'privatedata',
             },
           },
@@ -197,7 +197,7 @@ module.exports = {
           },
         ];
         console.log(JSON.stringify(query),"uguyu")
-        getdb(S)
+        getdb(STORES)
         .aggregate(query)
         .toArray((err, result) => {
           if (err) {

@@ -37,7 +37,7 @@ router.post('/authendicate/v1', (req, res, next) => {
 });
 router.post('/store/authendicate/v1', (req, res, next) => {
   loginBLayer
-    .v1(req)
+    .v2(req)
     .then((response) => {
       res.send(response);
     })
