@@ -1,0 +1,35 @@
+const express = require('express');
+const router = express.Router();
+const { validationResult } = require('express-validator');
+const validation = require('../validations/storevalidation');
+const storeBusinessLayer = require('../businesslayer/store-b-layer');
+
+router.post('/', validation.storeValidation(), (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  storeBusinessLayer
+    .createstore(req.body, res)
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      next(err);
+    });
+});
+router.put('/:store_id', validation.updateValidation(), (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    storeBusinessLayer
+      .updatestore(req)
+      .then((data) => {
+        res.send(data);
+      })
+      .catch((err) => {
+        next(err);
+      });
+  });
+module.exports = router;
