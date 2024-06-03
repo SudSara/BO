@@ -38,6 +38,7 @@ app.use(authHelper.checkAuth, (req, res, next) => {
 app.use('/', require('./controller/logincontroller'));
 app.use('/signup', require('./controller/signupcontroller'));
 app.use('/stores',require('./controller/storecontroller'));
+app.use('/category',require('./controller/categorycontroller'));
 app.use('*', (req, res) => {
   res.status(404).json({
     success: 'false',
