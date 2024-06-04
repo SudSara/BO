@@ -16,6 +16,7 @@ module.exports = {
                 let seInfo = {
                     store_id:data._id,
                     password:password,
+                    account_id : ObjectId(data.account_id),
                     created_at:new Date(),
                     updated_at:new Date()
                 }

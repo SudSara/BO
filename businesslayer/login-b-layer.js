@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const loginDBLayer = require('../databaselayer/login-db-layer');
-const { ACCOUNTS, STORES } = require('../helper/collection-name');
+const { ACCOUNTS, STORES, USER_SECURE_DATA } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 
@@ -83,19 +83,21 @@ module.exports = {
               last_name: 1,
               stores_count: 1,
               email: 1,
-              password: '$privatedata.password',
+              password: { $arrayElemAt: [ '$privatedata.password', 0 ] },
+              user_secure_id:{ $arrayElemAt: [ '$privatedata._id', 0 ] }
             },
           },
         ];
         console.log(JSON.stringify(query),"uguyu")
         getdb(ACCOUNTS)
         .aggregate(query)
-        .toArray((err, result) => {
+        .toArray(async(err, result) => {
           if (err) {
             reject(err);
           }
           if (result.length == 1) {
             const user = result[0];
+            console.log(user,"useruseruser")
             const passwordMatch = user.password == option.password;
             const token_code = {
               user_id: user._id,
@@ -126,6 +128,7 @@ module.exports = {
                     },
                     'hG6j!68Mgd3r!',
                   );
+                  await getdb(USER_SECURE_DATA).updateOne({_id:ObjectId(user.user_secure_id)},{$set:{token:token,last_login:new Date(),logged_in:true}});
                   resolve({
                     success: true,
                     token,
@@ -134,10 +137,6 @@ module.exports = {
                       email: user.email
                     },
                   });
-                
-                // else{
-                //   reject("branch or role not mapped")
-                // }
               }catch(err){
                 reject(err);
               }
@@ -158,24 +157,16 @@ module.exports = {
    v2(req) {
     return new Promise(async(resolve, reject) => {
       try{
-       // let c_info = await company_info(req.get('host'));
-        // if(c_info == null){
-        //   return  reject("Domain name is not rgister with us")
-        // }
         let response;
         const option = {
           user_name: req.body.user_name,
           password: req.body.password,
-          //branch_code: body.branch_code,
-          //company_id:ObjectId(c_info._id)
         };
         console.log(option)
         const query = [
           {
             $match: {
               email: option.user_name,
-            //  company_id:ObjectId(c_info._id)
-              // enabled: true,
             },
           },
           {
@@ -188,18 +179,18 @@ module.exports = {
           },
           {
             $project: {
-              first_name: 1,
-              last_name: 1,
-              stores_count: 1,
+              name: 1,
+              phone_number: 1,
+              account_id: 1,
               email: 1,
-              password: '$privatedata.password',
+              password: { $arrayElemAt: [ '$privatedata.password', 0 ] },
+              user_secure_id:{ $arrayElemAt: [ '$privatedata._id', 0 ] }
             },
           },
         ];
-        console.log(JSON.stringify(query),"uguyu")
         getdb(STORES)
         .aggregate(query)
-        .toArray((err, result) => {
+        .toArray(async(err, result) => {
           if (err) {
             reject(err);
           }
@@ -217,36 +208,33 @@ module.exports = {
               resolve(response);
             } else {
               try{
-                //let branch_data = await get_branch(user,option);
-               // let role_data = await get_roles(user);
-            
-                  const token_info = {
-                    user: {
-                      _id: user._id,
-                     // display_name: user.display_name,
-                     // mobile: user.phone_number,
-                      email: user.email,
-                    },
-                    token_code
-                  };
-                  const token = jwt.sign(
-                    {
-                      token_info,
-                    },
-                    'hG6j!68Mgd3r!',
-                  );
-                  resolve({
-                    success: true,
-                    token,
-                    user: {
-                      _id: user._id,
-                      email: user.email
-                    },
-                  });
-                
-                // else{
-                //   reject("branch or role not mapped")
-                // }
+                let account_data = await getdb(ACCOUNTS).findOne({"_id":ObjectId(user.account_id)});
+                let u_s_data = await getdb(USER_SECURE_DATA).find({account_id:ObjectId(user.account_id),"store_id":{'$exists': true},"logged_in":true}).toArray();
+                if(account_data.stores_count <= u_s_data.length){
+                  return reject({success:false,message:'store login limit excied'})
+                }
+                const token_info = {
+                  user: {
+                    _id: user._id,
+                    email: user.email,
+                  },
+                  token_code
+                };
+                const token = jwt.sign(
+                  {
+                    token_info,
+                  },
+                  'hG6j!68Mgd3r!',
+                );
+                await getdb(USER_SECURE_DATA).updateOne({_id:ObjectId(user.user_secure_id)},{$set:{token:token,last_login:new Date(),logged_in:true}});
+                resolve({
+                  success: true,
+                  token,
+                  user: {
+                    _id: user._id,
+                    email: user.email
+                  },
+                });
               }catch(err){
                 reject(err);
               }
@@ -263,6 +251,26 @@ module.exports = {
         reject(err);
       }
     });
+  },
+  accountLogout(req){
+    return new Promise((resolve,reject)=>{
+      getdb(USER_SECURE_DATA).updateOne({_id:ObjectId(req.params.account_id),"store_id":{'$exists': false}},{$set:{token:"",logged_in:false}},(err,result)=>{
+        if(err){
+          return reject(err)
+        }
+        resolve({success:true});
+      })
+    })
+  },
+  storeLogout(req){
+    return new Promise((resolve,reject)=>{
+      getdb(USER_SECURE_DATA).updateOne({store_id:ObjectId(req.params.store_id)},{$set:{token:"",logged_in:false}},(err,result)=>{
+        if(err){
+          return reject(err)
+        }
+        resolve({success:true});
+      })
+    })
   }
 };
 

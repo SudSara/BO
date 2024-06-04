@@ -45,4 +45,18 @@ router.post('/store/authendicate/v1', (req, res, next) => {
       next(err);
     });
 });
+router.put('/account/:account_id/logout',(req,res,next)=>{
+  loginBLayer.accountLogout(req).then((response)=>{
+    res.send(response);
+  }).catch(err=>{
+    next(err);
+  })
+});
+router.put('/store/:store_id/logout',(req,res,next)=>{
+  loginBLayer.storeLogout(req).then((response)=>{
+    res.send(response);
+  }).catch(err=>{
+    next(err);
+  })
+});
 module.exports = router;
