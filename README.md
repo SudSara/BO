@@ -8,7 +8,7 @@ Install MongoDb community edition above version 5.0 before run the application
 
 ## MongoDb
 
-- Post mongodb installation
+- Post mongodb installation run below command in terminal/cmd:
 
 ```bash
   mongod
@@ -16,7 +16,7 @@ Install MongoDb community edition above version 5.0 before run the application
 
 ## BO Project
 
-- Inside the BO project run below commands
+- Inside the BO project run below commands:
 
 ```bash
   npm install
