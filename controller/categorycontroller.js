@@ -67,4 +67,13 @@ router.get('/:id', validation.getAllValidation(),(req, res, next) => {
         })
 });
 
+router.get('/menu/:store_id',(req,res,next)=>{
+    categoryBusinessLayer.getCateoryMenu(req).then((data)=>{
+        res.send(data)
+    })
+    .catch((err)=>{
+        next(err);
+    })
+})
+
 module.exports = router;

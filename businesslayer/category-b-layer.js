@@ -7,6 +7,8 @@ module.exports = {
     createCategory(category) {
         category.created_at = new Date();
         category.updated_at = new Date();
+        category.account_id= ObjectId(category.account_id);
+        category.store_id = ObjectId(category.store_id);
         return new Promise((resolve, reject) => {
             getdb(CATEGORY).insertOne(category, async (err, result) => {
                 if (err) {
@@ -87,6 +89,30 @@ module.exports = {
                 return resolve({ success: true, result: `Deleted category successfully` });
             });
         });
+    },
+    getCateoryMenu(req){
+        return new Promise((resolve,reject)=>{
+            let query = [
+                {
+                  '$match': {
+                    'store_id': new ObjectId(req.params.store_id)
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'menuitems', 
+                    'localField': '_id', 
+                    'foreignField': 'category_id', 
+                    'as': 'menu_items'
+                  }
+                }
+            ]
+            getdb(CATEGORY).aggregate(query).toArray((err,result)=>{
+                if(err){
+                    return reject(err);
+                }
+                return resolve(result);
+            })
+        })
     }
 
 }

@@ -7,6 +7,9 @@ module.exports = {
     createMenuitem(menuitem) {
         menuitem.created_at = new Date();
         menuitem.updated_at = new Date();
+        menuitem.account_id = ObjectId(menuitem.account_id);
+        menuitem.store_id = ObjectId(menuitem.store_id);
+        menuitem.category_id = ObjectId(menuitem.category_id);
         return new Promise((resolve, reject) => {
             getdb(MENUITEMS).insertOne(menuitem, async (err, result) => {
                 if (err) {
@@ -19,8 +22,8 @@ module.exports = {
 
     getAllMenuitems(params) {
         let menuitemPayload = {
-            'account_id': params.account_id,
-            'store_id': params.store_id
+            'account_id': ObjectId(params.account_id),
+            'store_id': ObjectId(params.store_id)
         }
         return new Promise((resolve, reject) => {
             getdb(MENUITEMS).find(menuitemPayload).toArray()
