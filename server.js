@@ -42,6 +42,7 @@ app.use('/category',require('./controller/categorycontroller'));
 app.use('/users',require('./controller/userscontroller'));
 app.use('/roles',require('./controller/rolescontroller'));
 app.use('/customers',require('./controller/customerscontroller'));
+app.use('/menuitem',require('./controller/menuitemcontroller'));
 app.use('*', (req, res) => {
   res.status(404).json({
     success: 'false',

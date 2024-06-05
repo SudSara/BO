@@ -5,5 +5,6 @@ module.exports = {
   CATEGORY:'category',
   USERS:'users',
   ROLES:'roles',
-  CUSTOMERS:'customers'
+  CUSTOMERS:'customers',
+  MENUITEMS:'menuitems'
 };
