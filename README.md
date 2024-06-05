@@ -1,6 +1,6 @@
-# BO(POS back-office) - API Project 
+# BO(frontend) - API Project 
 
-This project is belongs to POS-Back Office
+This project is belongs to BO - front office project
 
 ## Installation
 
