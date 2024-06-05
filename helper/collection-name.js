@@ -3,5 +3,6 @@ module.exports = {
   USER_SECURE_DATA: 'UserSecureData',
   STORES:'stores',
   CATEGORY:'category',
-  USERS:'users'
+  USERS:'users',
+  ROLES:'roles'
 };
