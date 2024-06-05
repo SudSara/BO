@@ -4,6 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "start":"nodemon",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --ext .js,.ts,.tsx ./ && stylelint '**/*.tsx'",
     "lint:fix": "eslint --ext .js,.ts,.tsx --fix ./ && stylelint --fix '**/*.tsx'",

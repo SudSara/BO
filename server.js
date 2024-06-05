@@ -39,6 +39,11 @@ app.use('/', require('./controller/logincontroller'));
 app.use('/signup', require('./controller/signupcontroller'));
 app.use('/stores',require('./controller/storecontroller'));
 app.use('/category',require('./controller/categorycontroller'));
+app.use('/users',require('./controller/userscontroller'));
+app.use('/roles',require('./controller/rolescontroller'));
+app.use('/customers',require('./controller/customerscontroller'));
+app.use('/menuitem',require('./controller/menuitemcontroller'));
+app.use('/tax',require('./controller/taxcontroller'));
 app.use('*', (req, res) => {
   res.status(404).json({
     success: 'false',
