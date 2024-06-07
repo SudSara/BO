@@ -6,20 +6,20 @@ module.exports = {
     body('priority').isString().notEmpty(),
     body('role_id').isString().notEmpty(),
     body('roles').isArray().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   updateRolesDetailValidation: () => [
     body('name').isString().notEmpty(),
     body('priority').isString().notEmpty(),
     body('role_id').isString().notEmpty(),
     body('roles').isArray().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isString().notEmpty(),
-    query('store_id').isString().notEmpty()
+    query('account_id').isMongoId().notEmpty(),
+    query('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([

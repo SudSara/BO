@@ -7,17 +7,17 @@ module.exports = {
     body('tax').isArray().notEmpty(),
     body('category_id').isString().notEmpty(),
     body('item_showed_on').isString().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   updateMenuitemDetailValidation: () => [
     body('menu_name').isString().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isString().notEmpty(),
-    query('store_id').isString().notEmpty()
+    query('account_id').isMongoId().notEmpty(),
+    query('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([

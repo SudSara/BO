@@ -5,19 +5,19 @@ module.exports = {
     body('name').isString().notEmpty(),
     body('roles').isArray().notEmpty(),
     body('isExcludeCheckTax').isBoolean().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   updateValidation: () => [
     body('name').isString().notEmpty(),
     body('roles').isArray().notEmpty(),
     body('isExcludeCheckTax').isBoolean().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isString().notEmpty(),
-    query('store_id').isString().notEmpty()
+    query('account_id').isMongoId().notEmpty(),
+    query('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([

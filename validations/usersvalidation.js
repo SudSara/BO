@@ -10,8 +10,8 @@ module.exports = {
     body('new_password').isString().notEmpty(),
     body('confirm_password').isString().notEmpty(),
     body('pin').isString().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   updateUserDetailValidation: () => [
     body('language').isArray().notEmpty(),
@@ -22,12 +22,12 @@ module.exports = {
     body('password').isString().notEmpty(),
     body('confirm_password').isString().notEmpty(),
     body('pin').isString().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isString().notEmpty(),
-    query('store_id').isString().notEmpty()
+    query('account_id').isMongoId().notEmpty(),
+    query('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([

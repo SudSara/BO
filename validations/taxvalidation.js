@@ -14,18 +14,18 @@ module.exports = {
     body('check_amount').isString().notEmpty(),
     body('tax_on_items').isArray().notEmpty(),
     body('tax_on_check_tax').isArray().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   updateTaxDetailValidation: () => [
     body('name').isString().notEmpty(),
     body('tax_type').isString().notEmpty(),
-    body('account_id').isString().notEmpty(),
-    body('store_id').isString().notEmpty()
+    body('account_id').isMongoId().notEmpty(),
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isString().notEmpty(),
-    query('store_id').isString().notEmpty()
+    query('account_id').isMongoId().notEmpty(),
+    query('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([
