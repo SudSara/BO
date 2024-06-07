@@ -32,8 +32,7 @@ module.exports = {
 
     getAllUsers(params) {
         let userPayload = {
-            'account_id': ObjectId(params.account_id),
-            'store_id': ObjectId(params.store_id)
+            'account_id': ObjectId(params.account_id)
         }
         return new Promise((resolve, reject) => {
             getdb(USERS).find(userPayload).toArray()
@@ -50,10 +49,11 @@ module.exports = {
     updateUsers(userRequest) {
         let { params, body } = userRequest;
         body.updated_at = new Date();
+        body.account_id = ObjectId(body.account_id);
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.user_id),
-            account_id: body.account_id,
-            store_id: body.store_id
+            account_id: ObjectId(body.account_id),
         }
         return new Promise((resolve, reject) => {
             getdb(USERS).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -71,8 +71,7 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.id),
-                        'account_id': data.query.account_id,
-                        'store_id': data.query.store_id
+                        'account_id': ObjectId(data.query.account_id)
                     }
                 }
             ]
@@ -90,8 +89,7 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let queryPayload = {
                 _id: ObjectId(params.user_id),
-                account_id: query.account_id,
-                store_id: query.store_id
+                account_id: ObjectId(query.account_id)
             }
             getdb(USERS).deleteOne(queryPayload, (err, result) => {
                 if (err) {
