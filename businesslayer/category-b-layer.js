@@ -21,8 +21,8 @@ module.exports = {
 
     getAllCategory(params) {
         let payload = {
-            'account_id': params.account_id,
-            'store_id': params.store_id
+            'account_id': ObjectId(params.account_id),
+            'store_id': ObjectId(params.store_id)
         }
         return new Promise((resolve, reject) => {
             getdb(CATEGORY).find(payload).toArray()

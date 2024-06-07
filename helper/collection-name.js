@@ -7,5 +7,6 @@ module.exports = {
   ROLES:'roles',
   CUSTOMERS:'customers',
   MENUITEMS:'menuitems',
-  TAXES:'taxes'
+  TAXES:'taxes',
+  POS_USERS:"pos_users"
 };

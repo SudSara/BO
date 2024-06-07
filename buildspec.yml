@@ -2,7 +2,7 @@ version: 0.2
 phase:
     install:
         runtime-versions:
-            nodejs:16
+            nodejs:18
         commands:
             - echo installing source NPM dependencies...
             - npm install --force

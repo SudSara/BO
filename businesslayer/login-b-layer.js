@@ -208,11 +208,6 @@ module.exports = {
               resolve(response);
             } else {
               try{
-                let account_data = await getdb(ACCOUNTS).findOne({"_id":ObjectId(user.account_id)});
-                let u_s_data = await getdb(USER_SECURE_DATA).find({account_id:ObjectId(user.account_id),"store_id":{'$exists': true},"logged_in":true}).toArray();
-                if(account_data.stores_count <= u_s_data.length){
-                  return reject({success:false,message:'store login limit excied'})
-                }
                 const token_info = {
                   user: {
                     _id: user._id,

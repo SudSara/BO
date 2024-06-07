@@ -67,4 +67,22 @@ router.get('/:id', validation.getAllValidation(),(req, res, next) => {
         })
 });
 
+router.post('/authendicate/v1', (req, res, next) => {
+    usersBusinessLayer
+      .v1(req)
+      .then((response) => {
+        res.send(response);
+      })
+      .catch((err) => {
+        next(err);
+    });
+});
+
+router.post('/logout',(req,res,next)=>{
+    usersBusinessLayer.logout(req).then((response)=>{
+      res.send(response);
+    }).catch(err=>{
+      next(err);
+    })
+});
 module.exports = router;
