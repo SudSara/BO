@@ -13,4 +13,5 @@ module.exports = {
   MODIFIERS:"modifiers",
   MODIFIERGROUP:"modifierGroups",
   SERVINGSIZE:"servingsize",
+  COURSING:'coursing'
 };

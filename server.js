@@ -48,6 +48,7 @@ app.use('/discount',require('./controller/discountcontroller'));
 app.use('/modifiers',require('./controller/modifiercontroller'));
 app.use('/modifierGroup',require('./controller/modifiergroupcontroller'));
 app.use('/servingSize',require('./controller/servingsizecontroller'));
+app.use('/coursing',require('./controller/coursingcontroller'));
 
 app.use('*', (req, res) => {
   res.status(404).json({
