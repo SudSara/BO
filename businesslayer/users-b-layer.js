@@ -50,7 +50,6 @@ module.exports = {
         let { params, body } = userRequest;
         body.updated_at = new Date();
         body.account_id = ObjectId(body.account_id);
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.user_id),
             account_id: ObjectId(body.account_id),
@@ -159,7 +158,7 @@ module.exports = {
                         return resolve({success:false,message:'invalid account'})
                     }
                     if(account_data?.stores_count <= u_s_data.length){
-                        return resolve({success:false,message:'store login limit excied'})
+                        return resolve({success:false,message:'store login limit excited'})
                     }
                     const token_info = {
                         user: {
