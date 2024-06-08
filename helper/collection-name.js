@@ -9,5 +9,6 @@ module.exports = {
   MENUITEMS:'menuitems',
   TAXES:'taxes',
   POS_USERS:"pos_users",
-  DISCOUNTS:"discounts"
+  DISCOUNTS:"discounts",
+  MODIFIERS:"modifiers"
 };

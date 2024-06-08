@@ -1,49 +1,46 @@
-const { DISCOUNTS } = require('../helper/collection-name');
+const { MODIFIERS } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 
 module.exports = {
 
-    createDiscount(discount) {
-        discount.created_at = new Date();
-        discount.updated_at = new Date();
-        discount.account_id = ObjectId(discount.account_id);
+    createModifier(modifier) {
+        modifier.created_at = new Date();
+        modifier.updated_at = new Date();
+        modifier.account_id = ObjectId(modifier.account_id);
         return new Promise((resolve, reject) => {
-            getdb(DISCOUNTS).insertOne(discount, async (err, result) => {
+            getdb(MODIFIERS).insertOne(modifier, async (err, result) => {
                 if (err) {
                     return reject(err);
                 }
-                return resolve({ success: true, result:discount });
+                return resolve({ success: true, result:modifier });
             })
         })
     },
 
-    getAllDiscounts(params) {
-        let discountPayload = {
-            'account_id': ObjectId(params.account_id)
-        }
+    getAllModifiers(params) {
         return new Promise((resolve, reject) => {
-            getdb(DISCOUNTS).find(discountPayload).toArray()
+            getdb(MODIFIERS).find({'account_id': ObjectId(params.account_id)}).toArray()
                 .then((result) => {
                     resolve({ success: true, result });
                 })
                 .catch((err) => {
-                    console.error("Error fetching all discounts:", err);
+                    console.error("Error fetching all modifiers:", err);
                     reject(err);
                 });
         });
     },
 
-    updateDiscounts(discountRequest) {
-        let { params, body } = discountRequest;
+    updateModifiers(modifierRequest) {
+        let { params, body } = modifierRequest;
         body.updated_at = new Date();
         body.account_id = ObjectId(body.account_id);
         let queryPayload = {
-            _id: ObjectId(params.discount_id),
+            _id: ObjectId(params.modifier_id),
             account_id: body.account_id
         }
         return new Promise((resolve, reject) => {
-            getdb(DISCOUNTS).updateOne(queryPayload, { $set: body }, (err, result) => {
+            getdb(MODIFIERS).updateOne(queryPayload, { $set: body }, (err, result) => {
                 if (err) {
                     return reject(err);
                 }
@@ -52,17 +49,17 @@ module.exports = {
         })
     },
 
-    getDiscountsById(data) {
+    getModifiersById(data) {
         return new Promise((resolve, reject) => {
             let query = [
                 {
                     '$match': {
-                        '_id': ObjectId(data.params.discount_id),
+                        '_id': ObjectId(data.params.modifier_id),
                         'account_id': ObjectId(data.params.account_id)
                     }
                 }
             ]
-            getdb(DISCOUNTS).aggregate(query).toArray((err, result) => {
+            getdb(MODIFIERS).aggregate(query).toArray((err, result) => {
                 if (err) {
                     return reject(err);
                 }
@@ -70,4 +67,5 @@ module.exports = {
             });
         })
     },
+
 }
