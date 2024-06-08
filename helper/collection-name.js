@@ -11,5 +11,6 @@ module.exports = {
   POS_USERS:"pos_users",
   DISCOUNTS:"discounts",
   MODIFIERS:"modifiers",
-  MODIFIERGROUP:"modifierGroups"
+  MODIFIERGROUP:"modifierGroups",
+  SERVINGSIZE:"servingsize",
 };
