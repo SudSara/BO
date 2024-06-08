@@ -19,7 +19,6 @@ module.exports = {
     },
 
     getAllDiscounts(params) {
-        console.log(params.account_id,"params")
         let discountPayload = {
             'account_id': ObjectId(params.account_id)
         }
