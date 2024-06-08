@@ -46,6 +46,7 @@ app.use('/menuitem',require('./controller/menuitemcontroller'));
 app.use('/tax',require('./controller/taxcontroller'));
 app.use('/discount',require('./controller/discountcontroller'));
 app.use('/modifiers',require('./controller/modifiercontroller'));
+app.use('/modifierGroup',require('./controller/modifiergroupcontroller'));
 
 app.use('*', (req, res) => {
   res.status(404).json({

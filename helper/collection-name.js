@@ -10,5 +10,6 @@ module.exports = {
   TAXES:'taxes',
   POS_USERS:"pos_users",
   DISCOUNTS:"discounts",
-  MODIFIERS:"modifiers"
+  MODIFIERS:"modifiers",
+  MODIFIERGROUP:"modifierGroups"
 };
