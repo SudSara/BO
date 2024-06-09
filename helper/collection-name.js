@@ -8,5 +8,10 @@ module.exports = {
   CUSTOMERS:'customers',
   MENUITEMS:'menuitems',
   TAXES:'taxes',
-  POS_USERS:"pos_users"
+  POS_USERS:"pos_users",
+  DISCOUNTS:"discounts",
+  MODIFIERS:"modifiers",
+  MODIFIERGROUP:"modifierGroups",
+  SERVINGSIZE:"servingsize",
+  COURSING:'coursing'
 };
