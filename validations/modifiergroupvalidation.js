@@ -10,7 +10,7 @@ module.exports = {
     body('servingSizes.*.sizeId').isString(),
     body('servingSizes.*.price').isNumeric(),
     body('isActive').isBoolean().notEmpty(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   updateModifierGroupDetailValidation: () => [
     body('name').isString().notEmpty(),
@@ -21,10 +21,10 @@ module.exports = {
     body('servingSizes.*.sizeId').isString(),
     body('servingSizes.*.price').isNumeric(),
     body('isActive').isBoolean().notEmpty(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    param('account_id').isMongoId().notEmpty()
+    param('store_id').isMongoId().notEmpty()
   ],
 
 };

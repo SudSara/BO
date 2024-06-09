@@ -7,7 +7,7 @@ module.exports = {
     createServingSize(servingsize) {
         servingsize.created_at = new Date();
         servingsize.updated_at = new Date();
-        servingsize.account_id = ObjectId(servingsize.account_id);
+        servingsize.store_id = ObjectId(servingsize.store_id);
         return new Promise((resolve, reject) => {
             getdb(SERVINGSIZE).insertOne(servingsize, async (err, result) => {
                 if (err) {
@@ -20,7 +20,7 @@ module.exports = {
 
     getAllServingSizes(params) {
         return new Promise((resolve, reject) => {
-            getdb(SERVINGSIZE).find({'account_id': ObjectId(params.account_id)}).toArray()
+            getdb(SERVINGSIZE).find({'store_id': ObjectId(params.store_id)}).toArray()
                 .then((result) => {
                     resolve({ success: true, result });
                 })
@@ -34,10 +34,10 @@ module.exports = {
     updateServingSizes(servingsizeRequest) {
         let { params, body } = servingsizeRequest;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.servingsize_id),
-            account_id: body.account_id
+            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(SERVINGSIZE).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -55,7 +55,7 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.servingsize_id),
-                        'account_id': ObjectId(data.params.account_id)
+                        'store_id': ObjectId(data.params.store_id)
                     }
                 }
             ]

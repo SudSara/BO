@@ -14,7 +14,7 @@ module.exports = {
     body('isActive').isBoolean().notEmpty(),
     body('image').isString(),
     body('color').isString(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   updateDiscountDetailValidation: () => [
     body('name').isString(),
@@ -29,10 +29,10 @@ module.exports = {
     body('image').isString(),
     body('isActive').isBoolean().notEmpty(),
     body('color').isString(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    param('account_id').isMongoId().notEmpty()
+    param('store_id').isMongoId().notEmpty()
   ]
 };
 

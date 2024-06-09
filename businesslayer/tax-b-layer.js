@@ -7,7 +7,7 @@ module.exports = {
     createTax(tax) {
         tax.created_at = new Date();
         tax.updated_at = new Date();
-        tax.account_id = ObjectId(tax.account_id);
+        tax.store_id = ObjectId(tax.store_id);
         return new Promise((resolve, reject) => {
             getdb(TAXES).insertOne(tax, async (err, result) => {
                 if (err) {
@@ -20,7 +20,7 @@ module.exports = {
 
     getAllTaxes(params) {
         let taxPayload = {
-            'account_id': ObjectId(params.account_id)
+            'store_id': ObjectId(params.store_id)
         }
         return new Promise((resolve, reject) => {
             getdb(TAXES).find(taxPayload).toArray()
@@ -37,10 +37,10 @@ module.exports = {
     updateTaxes(taxRequest) {
         let { params, body } = taxRequest;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.tax_id),
-            account_id: body.account_id
+            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(TAXES).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -58,7 +58,7 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.id),
-                        'account_id': ObjectId(data.query.account_id)
+                        'store_id': ObjectId(data.query.store_id)
                     }
                 }
             ]
@@ -76,7 +76,7 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let queryPayload = {
                 _id: ObjectId(params.tax_id),
-                account_id: ObjectId(query.account_id)
+                store_id: ObjectId(query.store_id)
             }
             getdb(TAXES).deleteOne(queryPayload, (err, result) => {
                 if (err) {

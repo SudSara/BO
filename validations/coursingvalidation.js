@@ -5,15 +5,15 @@ module.exports = {
     body('name').isString().notEmpty(),
     body('priority').isInt(),
     body('isActive').isBoolean().notEmpty(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   updateCoursingDetailValidation: () => [
     body('name').isString().notEmpty(),
     body('priority').isInt(),
     body('isActive').isBoolean().notEmpty(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation: () => [
-    param('account_id').isMongoId().notEmpty()
+    param('store_id').isMongoId().notEmpty()
   ],
 };

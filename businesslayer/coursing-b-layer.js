@@ -5,9 +5,10 @@ const { ObjectId } = require('mongodb');
 module.exports = {
 
     createCoursing(coursing) {
+        console.log(coursing,"coursing")
         coursing.created_at = new Date();
         coursing.updated_at = new Date();
-        coursing.account_id = ObjectId(coursing.account_id);
+        coursing.store_id = ObjectId(coursing.store_id);
         return new Promise((resolve, reject) => {
             getdb(COURSING).insertOne(coursing, async (err, result) => {
                 if (err) {
@@ -20,7 +21,7 @@ module.exports = {
 
     getAllCoursing(params) {
         return new Promise((resolve, reject) => {
-            getdb(COURSING).find({'account_id': ObjectId(params.account_id)}).toArray()
+            getdb(COURSING).find({'store_id': ObjectId(params.store_id)}).toArray()
                 .then((result) => {
                     resolve({ success: true, result });
                 })
@@ -34,10 +35,10 @@ module.exports = {
     updateCoursing(coursingRequest) {
         let { params, body } = coursingRequest;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.coursing_id),
-            account_id: body.account_id
+            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(COURSING).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -55,7 +56,7 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.coursing_id),
-                        'account_id': ObjectId(data.params.account_id)
+                        'store_id': ObjectId(data.params.store_id)
                     }
                 }
             ]

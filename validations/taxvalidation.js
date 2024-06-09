@@ -8,17 +8,17 @@ module.exports = {
     body('isDefault').isBoolean().notEmpty(),
     body('isQuantity').isBoolean().notEmpty(),
     body('isInclusive').isBoolean().notEmpty(),
-    body('IsApplyonSubtotal').isBoolean().notEmpty(),
+    body('isApplyonSubtotal').isBoolean().notEmpty(),
     body('percentage').isInt().notEmpty(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   updateTaxDetailValidation: () => [
     body('name').isString().notEmpty(),
     body('taxType').isInt().notEmpty(),
-    body('account_id').isMongoId().notEmpty()
+    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isMongoId().notEmpty()
+    query('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([

@@ -7,7 +7,7 @@ module.exports = {
     createModifier(modifier) {
         modifier.created_at = new Date();
         modifier.updated_at = new Date();
-        modifier.account_id = ObjectId(modifier.account_id);
+        modifier.store_id = ObjectId(modifier.store_id);
         return new Promise((resolve, reject) => {
             getdb(MODIFIERS).insertOne(modifier, async (err, result) => {
                 if (err) {
@@ -20,7 +20,7 @@ module.exports = {
 
     getAllModifiers(params) {
         return new Promise((resolve, reject) => {
-            getdb(MODIFIERS).find({'account_id': ObjectId(params.account_id)}).toArray()
+            getdb(MODIFIERS).find({'store_id': ObjectId(params.store_id)}).toArray()
                 .then((result) => {
                     resolve({ success: true, result });
                 })
@@ -34,10 +34,10 @@ module.exports = {
     updateModifiers(modifierRequest) {
         let { params, body } = modifierRequest;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.modifier_id),
-            account_id: body.account_id
+            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(MODIFIERS).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -55,7 +55,7 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.modifier_id),
-                        'account_id': ObjectId(data.params.account_id)
+                        'store_id': ObjectId(data.params.store_id)
                     }
                 }
             ]

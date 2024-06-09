@@ -19,7 +19,7 @@ router.post('/', validation.createModifierGroupValidation(), (req, res, next) =>
         });
 });
 
-router.get('/:account_id', validation.getAllValidation(), (req, res, next) => {
+router.get('/:store_id', validation.getAllValidation(), (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -48,7 +48,7 @@ router.put('/:modifierGroup_id', validation.updateModifierGroupDetailValidation(
         });
 });
 
-router.get('/:modifierGroup_id/:account_id', validation.getAllValidation(),(req, res, next) => {
+router.get('/:modifierGroup_id/:store_id', validation.getAllValidation(),(req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });

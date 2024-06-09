@@ -7,7 +7,7 @@ module.exports = {
     createModifierGroup(modifierGroup) {
         modifierGroup.created_at = new Date();
         modifierGroup.updated_at = new Date();
-        modifierGroup.account_id = ObjectId(modifierGroup.account_id);
+        modifierGroup.store_id = ObjectId(modifierGroup.store_id);
         return new Promise((resolve, reject) => {
             getdb(MODIFIERGROUP).insertOne(modifierGroup, async (err, result) => {
                 if (err) {
@@ -20,7 +20,7 @@ module.exports = {
 
     getAllModifierGroups(params) {
         return new Promise((resolve, reject) => {
-            getdb(MODIFIERGROUP).find({'account_id': ObjectId(params.account_id)}).toArray()
+            getdb(MODIFIERGROUP).find({'store_id': ObjectId(params.store_id)}).toArray()
                 .then((result) => {
                     resolve({ success: true, result });
                 })
@@ -34,10 +34,10 @@ module.exports = {
     updateModifierGroups(modifierGroupRequest) {
         let { params, body } = modifierGroupRequest;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.modifierGroup_id),
-            account_id: body.account_id
+            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(MODIFIERGROUP).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -55,7 +55,7 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.modifierGroup_id),
-                        'account_id': ObjectId(data.params.account_id)
+                        'store_id': ObjectId(data.params.store_id)
                     }
                 }
             ]

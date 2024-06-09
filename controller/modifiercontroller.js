@@ -19,7 +19,7 @@ router.post('/', validation.createModifierValidation(), (req, res, next) => {
         });
 });
 
-router.get('/:account_id', validation.getAllValidation(), (req, res, next) => {
+router.get('/:store_id', validation.getAllValidation(), (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -48,7 +48,7 @@ router.put('/:modifier_id', validation.updateModifierDetailValidation(), (req, r
         });
 });
 
-router.get('/:modifier_id/:account_id', validation.getAllValidation(),(req, res, next) => {
+router.get('/:modifier_id/:store_id', validation.getAllValidation(),(req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
