@@ -48,4 +48,12 @@ router.get('/account/:account_id',(req,res,next)=>{
     next(err);
   })
 });
+router.get('/settings/:store_id',(req,res,next)=>{
+  storeBusinessLayer.getSettingByStoreid(req).then((data)=>{
+    res.send(data);
+  })
+  .catch((err)=>{
+    next(err);
+  })
+})
 module.exports = router;

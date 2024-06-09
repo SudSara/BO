@@ -63,5 +63,64 @@ module.exports = {
                 return resolve({success:true,result});
             })
         })
+    },
+    getSettingByStoreid(req){
+        return new Promise((resolve,reject)=>{
+            let query = [
+                {
+                  '$match': {
+                    '_id': ObjectId(req.params.store_id)
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'category', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'category'
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'taxes', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'taxes'
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'discounts', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'discounts'
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'roles', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'roles'
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'menuitems', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'menuitems'
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'users', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'users'
+                  }
+                }
+            ]
+            getdb(STORES).aggregate(query).toArray((err,result)=>{
+                if(err){
+                    return reject(err)
+                }
+                return resolve({success:true,result})
+            })
+        })
     }
 }

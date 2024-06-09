@@ -7,7 +7,6 @@ module.exports = {
     createRole(role) {
         role.created_at = new Date();
         role.updated_at = new Date();
-        role.account_id = ObjectId(role.account_id);
         role.store_id = ObjectId(role.store_id);
         return new Promise((resolve, reject) => {
             getdb(ROLES).insertOne(role, async (err, result) => {
