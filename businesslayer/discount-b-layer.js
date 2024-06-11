@@ -37,10 +37,8 @@ module.exports = {
     updateDiscounts(discountRequest) {
         let { params, body } = discountRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.discount_id),
-            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(DISCOUNTS).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -57,11 +55,11 @@ module.exports = {
             let query = [
                 {
                     '$match': {
-                        '_id': ObjectId(data.params.discount_id),
-                        'store_id': ObjectId(data.params.store_id)
+                        '_id': ObjectId(data.params.id)
                     }
                 }
             ]
+            console.log(query,"dsfds")
             getdb(DISCOUNTS).aggregate(query).toArray((err, result) => {
                 if (err) {
                     return reject(err);

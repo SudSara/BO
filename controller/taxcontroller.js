@@ -19,13 +19,13 @@ router.post('/', validation.createTaxValidation(), (req, res, next) => {
         });
 });
 
-router.get('/', validation.getAllValidation(), (req, res, next) => {
+router.get('/store/:store_id', validation.getAllValidation(), (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     taxBusinessLayer
-        .getAllTaxes(req.query)
+        .getAllTaxes(req.params)
         .then((data) => {
             res.send(data);
         })
@@ -34,7 +34,7 @@ router.get('/', validation.getAllValidation(), (req, res, next) => {
         });
 });
 
-router.put('/:tax_id', validation.updateOrdeleteValidation(), (req, res, next) => {
+router.put('/:tax_id', (req, res, next) => {
     var query;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -54,7 +54,7 @@ router.put('/:tax_id', validation.updateOrdeleteValidation(), (req, res, next) =
         });
 });
 
-router.get('/:id', validation.getAllValidation(),(req, res, next) => {
+router.get('/:id',(req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });

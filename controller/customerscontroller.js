@@ -19,13 +19,13 @@ router.post('/', validation.createCustomerValidation(), (req, res, next) => {
         });
 });
 
-router.get('/', validation.getAllValidation(), (req, res, next) => {
+router.get('/store/:store_id', (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     customersBusinessLayer
-        .getAllCustomers(req.query)
+        .getAllCustomers(req.params)
         .then((data) => {
             res.send(data);
         })

@@ -19,7 +19,7 @@ router.post('/', validation.createDiscountValidation(), (req, res, next) => {
         });
 });
 
-router.get('/:store_id', validation.getAllValidation(), (req, res, next) => {
+router.get('/store/:store_id', (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -48,7 +48,7 @@ router.put('/:discount_id', validation.updateDiscountDetailValidation(), (req, r
         });
 });
 
-router.get('/:discount_id/:store_id', validation.getAllValidation(),(req, res, next) => {
+router.get('/:id', validation.getAllValidation(),(req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });

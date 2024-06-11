@@ -7,7 +7,6 @@ module.exports = {
     createCategory(category) {
         category.created_at = new Date();
         category.updated_at = new Date();
-        category.account_id= ObjectId(category.account_id);
         category.store_id = ObjectId(category.store_id);
         return new Promise((resolve, reject) => {
             getdb(CATEGORY).insertOne(category, async (err, result) => {
@@ -21,7 +20,6 @@ module.exports = {
 
     getAllCategory(params) {
         let payload = {
-            'account_id': ObjectId(params.account_id),
             'store_id': ObjectId(params.store_id)
         }
         return new Promise((resolve, reject) => {
@@ -39,12 +37,8 @@ module.exports = {
     updateCategory(req) {
         let { params, body } = req;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.category_id),
-            account_id: body.account_id,
-            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(CATEGORY).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -62,8 +56,6 @@ module.exports = {
                 {
                     '$match': {
                         '_id': ObjectId(data.params.id),
-                        'account_id': ObjectId(data.query.account_id),
-                        'store_id': ObjectId(data.query.store_id)
                     }
                 }
             ]
@@ -81,7 +73,6 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let queryPayload = {
                 _id: ObjectId(params.category_id),
-                account_id: ObjectId(query.account_id),
                 store_id: ObjectId(query.store_id)
             }
             getdb(CATEGORY).deleteOne(queryPayload, (err, result) => {

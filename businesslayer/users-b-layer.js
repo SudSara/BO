@@ -1,4 +1,4 @@
-const { USERS,USER_SECURE_DATA,ACCOUNTS } = require('../helper/collection-name');
+const { USERS,USER_SECURE_DATA,ACCOUNTS ,STORES} = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
@@ -9,6 +9,10 @@ module.exports = {
         user.created_at = new Date();
         user.updated_at = new Date();
         password = user.new_password;
+        pin = user.pin;
+        delete user?.new_password;
+        delete user?.confirm_password;
+        delete user?.pin;
         user.store_id = ObjectId(user.store_id);
         return new Promise((resolve, reject) => {
             getdb(USERS).insertOne(user, async (err, result) => {
@@ -18,12 +22,12 @@ module.exports = {
                 let seInfo = {
                     user_id:user._id,
                     password:password,
+                    pin:pin,
                     store_id : ObjectId(user.store_id),
                     created_at:new Date(),
                     updated_at:new Date()
                 }
-                delete user?.new_password;
-                delete user?.confirm_password;
+               
                 await getdb(USER_SECURE_DATA).insertOne(seInfo)
                 return resolve({success:true,user});
             })
@@ -110,31 +114,35 @@ module.exports = {
             const query = [
                 {
                 $match: {
-                    mail_id: option.user_name,
+                    email: option.user_name,
                 },
                 },
                 {
                 $lookup: {
                     from: 'UserSecureData',
                     localField: '_id',
-                    foreignField: 'user_id',
+                    foreignField: 'store_id',
                     as: 'privatedata',
                 },
                 },
                 {
-                $project: {
-                    name: 1,
-                    phone_number: 1,
-                    account_id: 1,
-                    email: 1,
-                    password: { $arrayElemAt: [ '$privatedata.password', 0 ] },
-                    user_secure_id:{ $arrayElemAt: [ '$privatedata._id', 0 ] }
-                },
+                    $project: {
+                        name: 1,
+                        phone_number: 1,
+                        account_id: 1,
+                        email: 1,
+                        password: { $arrayElemAt: [ '$privatedata.password', 0 ] },
+                        user_secure_id:{ $arrayElemAt: [ '$privatedata._id', 0 ] },
+                        primary:1,
+                        phone_number:1,
+                        business_type:1
+                    },
                 },
             ];
-            getdb(USERS)
+            getdb(STORES)
             .aggregate(query)
             .toArray(async(err, result) => {
+                console.log(result,"fgdgf")
                 if (err) {
                 reject(err);
                 }
@@ -153,7 +161,7 @@ module.exports = {
                 } else {
                     try{
                     let account_data = await getdb(ACCOUNTS).findOne({"_id":ObjectId(user.account_id)});
-                    let u_s_data = await getdb(USER_SECURE_DATA).find({account_id:ObjectId(user.account_id),"user_id":{'$exists': true},"logged_in":true}).toArray();
+                    let u_s_data = await getdb(USER_SECURE_DATA).find({account_id:ObjectId(user.account_id),"store_id":{'$exists': true},"logged_in":true}).toArray();
                     if(!account_data?.stores_count){
                         return resolve({success:false,message:'invalid account'})
                     }
@@ -179,7 +187,10 @@ module.exports = {
                         token,
                         user: {
                         _id: user._id,
-                        email: user.email
+                        email: user.email,
+                        primary:user.primary ? true:false,
+                        phone_number:user.phone_number,
+                        business_type:user.business_type
                         },
                     });
                     }catch(err){

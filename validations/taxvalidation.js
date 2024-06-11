@@ -1,4 +1,4 @@
-const { body ,query, oneOf} = require('express-validator');
+const { body ,query, param, oneOf} = require('express-validator');
 
 module.exports = {
   createTaxValidation: () => [
@@ -18,7 +18,7 @@ module.exports = {
     body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('store_id').isMongoId().notEmpty()
+    param('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([

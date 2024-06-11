@@ -19,13 +19,13 @@ router.post('/', validation.categoryValidation(), (req, res, next) => {
         });
 });
 
-router.get('/', validation.getAllValidation(), (req, res, next) => {
+router.get('/store/:store_id', (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     categoryBusinessLayer
-        .getAllCategory(req.query)
+        .getAllCategory(req.params)
         .then((data) => {
             res.send(data);
         })
@@ -54,7 +54,7 @@ router.put('/:category_id', validation.updateOrdeleteValidation(), (req, res, ne
         });
 });
 
-router.get('/:id', validation.getAllValidation(),(req, res, next) => {
+router.get('/:id',(req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });

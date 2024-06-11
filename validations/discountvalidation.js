@@ -28,11 +28,10 @@ module.exports = {
     body('attachCustomer').isBoolean(),
     body('image').isString(),
     body('isActive').isBoolean().notEmpty(),
-    body('color').isString(),
-    body('store_id').isMongoId().notEmpty()
+    body('color').isString()
   ],
   getAllValidation:() =>[
-    param('store_id').isMongoId().notEmpty()
+    param('id').isMongoId().notEmpty()
   ]
 };
 
