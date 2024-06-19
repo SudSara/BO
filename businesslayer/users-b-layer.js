@@ -1,4 +1,4 @@
-const { USERS,USER_SECURE_DATA,ACCOUNTS ,STORES} = require('../helper/collection-name');
+const { USERS,USER_SECURE_DATA,ACCOUNTS ,STORES,LOGININFO} = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
@@ -151,6 +151,8 @@ module.exports = {
                 const passwordMatch = user.password == option.password;
                 const token_code = {
                     user_id: user._id,
+                    store_id:user._id,
+                    account_id:user.account_id
                 };
                 if (!passwordMatch) {
                     response = {
@@ -161,7 +163,7 @@ module.exports = {
                 } else {
                     try{
                     let account_data = await getdb(ACCOUNTS).findOne({"_id":ObjectId(user.account_id)});
-                    let u_s_data = await getdb(USER_SECURE_DATA).find({account_id:ObjectId(user.account_id),"store_id":{'$exists': true},"logged_in":true}).toArray();
+                    let u_s_data = await getdb(LOGININFO).find({account_id:ObjectId(user.account_id),"logged_in":true}).toArray();
                     if(!account_data?.stores_count){
                         return resolve({success:false,message:'invalid account'})
                     }
@@ -181,7 +183,7 @@ module.exports = {
                         },
                         'hG6j!68Mgd3r!',
                     );
-                    await getdb(USER_SECURE_DATA).updateOne({_id:ObjectId(user.user_secure_id)},{$set:{token:token,last_login:new Date(),logged_in:true}});
+                    await getdb(LOGININFO).updateOne({account_id:ObjectId(user.account_id),store_id:ObjectId(user._id),"device_id":req.body.device_id},{$set:{'device_name':req.body.device_name,'device_type':req.body.device_type,"logged_in":true,updated_at:new Date(),token:token}},{upsert:true});
                     resolve({
                         success: true,
                         token,
@@ -213,7 +215,7 @@ module.exports = {
 
     logout(req){
         return new Promise((resolve,reject)=>{
-            getdb(USER_SECURE_DATA).updateOne({user_id:ObjectId(req.auth.user_id)},{$set:{token:"",logged_in:false}},(err,result)=>{
+            getdb(LOGININFO).updateOne({store_id:ObjectId(req.auth.store_id),account_id:ObjectId(req.auth.account_id),device_id:req.params.device_id},{$set:{token:"",logged_in:false}},(err,result)=>{
               if(err){
                 return reject(err)
               }

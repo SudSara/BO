@@ -113,6 +113,28 @@ module.exports = {
                     'foreignField': 'store_id', 
                     'as': 'users'
                   }
+                },{
+                  '$lookup': {
+                    'from': 'modifiers', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'users'
+                  }
+                },{
+                  '$lookup': {
+                    'from': 'modifierGroups', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'users'
+                  }
+                },
+                {
+                  '$lookup': {
+                    'from': 'servingsize', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'users'
+                  }
                 }
             ]
             getdb(STORES).aggregate(query).toArray((err,result)=>{

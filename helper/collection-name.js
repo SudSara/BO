@@ -13,5 +13,7 @@ module.exports = {
   MODIFIERS:"modifiers",
   MODIFIERGROUP:"modifierGroups",
   SERVINGSIZE:"servingsize",
-  COURSING:'coursing'
+  COURSING:'coursing',
+  LOGININFO:'logininfo',
+  CHECKS:'checks'
 };

@@ -20,8 +20,7 @@ module.exports = {
     body('PluCode').isString().optional(),
     body('modifyWithId').isString().optional(),
     body('color').isString().optional(),
-    body('isActive').isBoolean().notEmpty(),
-    body('store_id').isMongoId().notEmpty()
+    body('isActive').isBoolean().notEmpty()
   ],
   getAllValidation:() =>[
     param('store_id').isMongoId().notEmpty()

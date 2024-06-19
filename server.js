@@ -49,6 +49,7 @@ app.use('/modifiers',require('./controller/modifiercontroller'));
 app.use('/modifierGroup',require('./controller/modifiergroupcontroller'));
 app.use('/servingSize',require('./controller/servingsizecontroller'));
 app.use('/coursing',require('./controller/coursingcontroller'));
+app.use('/checks',require('./controller/checkscontroller'));
 
 app.use('*', (req, res) => {
   res.status(404).json({

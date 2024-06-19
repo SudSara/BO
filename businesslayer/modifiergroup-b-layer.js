@@ -34,10 +34,8 @@ module.exports = {
     updateModifierGroups(modifierGroupRequest) {
         let { params, body } = modifierGroupRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.modifierGroup_id),
-            store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
             getdb(MODIFIERGROUP).updateOne(queryPayload, { $set: body }, (err, result) => {

@@ -10,8 +10,7 @@ module.exports = {
   updateCoursingDetailValidation: () => [
     body('name').isString().notEmpty(),
     body('priority').isInt(),
-    body('isActive').isBoolean().notEmpty(),
-    body('store_id').isMongoId().notEmpty()
+    body('isActive').isBoolean().notEmpty()
   ],
   getAllValidation: () => [
     param('store_id').isMongoId().notEmpty()

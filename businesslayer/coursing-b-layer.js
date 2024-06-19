@@ -35,10 +35,8 @@ module.exports = {
     updateCoursing(coursingRequest) {
         let { params, body } = coursingRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
-            _id: ObjectId(params.coursing_id),
-            store_id: body.store_id
+            _id: ObjectId(params.coursing_id)
         }
         return new Promise((resolve, reject) => {
             getdb(COURSING).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -55,8 +53,7 @@ module.exports = {
             let query = [
                 {
                     '$match': {
-                        '_id': ObjectId(data.params.coursing_id),
-                        'store_id': ObjectId(data.params.store_id)
+                        '_id': ObjectId(data.params.coursing_id)
                     }
                 }
             ]

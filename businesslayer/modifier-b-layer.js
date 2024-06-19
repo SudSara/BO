@@ -34,10 +34,8 @@ module.exports = {
     updateModifiers(modifierRequest) {
         let { params, body } = modifierRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
-            _id: ObjectId(params.modifier_id),
-            store_id: body.store_id
+            _id: ObjectId(params.modifier_id)
         }
         return new Promise((resolve, reject) => {
             getdb(MODIFIERS).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -54,8 +52,7 @@ module.exports = {
             let query = [
                 {
                     '$match': {
-                        '_id': ObjectId(data.params.modifier_id),
-                        'store_id': ObjectId(data.params.store_id)
+                        '_id': ObjectId(data.params.modifier_id)
                     }
                 }
             ]

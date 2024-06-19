@@ -54,8 +54,7 @@ module.exports = {
             let query = [
                 {
                     '$match': {
-                        '_id': ObjectId(data.params.servingsize_id),
-                        'store_id': ObjectId(data.params.store_id)
+                        '_id': ObjectId(data.params.servingsize_id)
                     }
                 }
             ]

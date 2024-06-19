@@ -78,7 +78,7 @@ router.post('/authendicate/v1', (req, res, next) => {
     });
 });
 
-router.post('/logout',(req,res,next)=>{
+router.post('/logout/:device_id',(req,res,next)=>{
     usersBusinessLayer.logout(req).then((response)=>{
       res.send(response);
     }).catch(err=>{
