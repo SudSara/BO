@@ -4,16 +4,15 @@ module.exports = {
   createRolesValidation: () => [
     body('name').isString().notEmpty(),
     body('priority').isString().notEmpty(),
-    body('role_id').isString().notEmpty(),
+    body('role_id').isString().optional(),
     body('permissions').isString().notEmpty(),
     body('store_id').isMongoId().notEmpty()
   ],
   updateRolesDetailValidation: () => [
     body('name').isString().notEmpty(),
     body('priority').isString().notEmpty(),
-    body('role_id').isString().notEmpty(),
+    body('role_id').isString().optional(),
     body('permissions').isString().notEmpty(),
-    body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
     param('store_id').isMongoId().notEmpty()
