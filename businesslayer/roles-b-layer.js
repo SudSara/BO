@@ -19,12 +19,8 @@ module.exports = {
     },
 
     getAllRoles(params) {
-        let rolePayload = {
-            'account_id': ObjectId(params.account_id),
-            'store_id': ObjectId(params.store_id)
-        }
         return new Promise((resolve, reject) => {
-            getdb(ROLES).find(rolePayload).toArray()
+            getdb(ROLES).find({'store_id': ObjectId(params.store_id)}).toArray()
                 .then((result) => {
                     resolve({ success: true, result });
                 })
@@ -38,11 +34,9 @@ module.exports = {
     updateRoles(roleRequest) {
         let { params, body } = roleRequest;
         body.updated_at = new Date();
-        body.account_id = ObjectId(body.account_id);
         body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.role_id),
-            account_id: body.account_id,
             store_id: body.store_id
         }
         return new Promise((resolve, reject) => {
@@ -60,9 +54,7 @@ module.exports = {
             let query = [
                 {
                     '$match': {
-                        '_id': ObjectId(data.params.id),
-                        'account_id': ObjectId(data.query.account_id),
-                        'store_id': ObjectId(data.query.store_id)
+                        '_id': ObjectId(data.params.role_id)
                     }
                 }
             ]
@@ -76,12 +68,10 @@ module.exports = {
     },
 
     deleteRolesById(req) {
-        let { params, query } = req;
+        let { params } = req;
         return new Promise((resolve, reject) => {
             let queryPayload = {
-                _id: ObjectId(params.role_id),
-                account_id: ObjectId(query.account_id),
-                store_id: ObjectId(query.store_id)
+                _id: ObjectId(params.role_id)
             }
             getdb(ROLES).deleteOne(queryPayload, (err, result) => {
                 if (err) {
