@@ -6,11 +6,10 @@ module.exports = {
     body('applicablePeriod').isInt().notEmpty(),
     body('roles').isArray().notEmpty(),
     body('isExcludeCheckTax').isBoolean().notEmpty(),
-    body('servingSizes').isArray().notEmpty(),
+    body('servingSizes').isArray().optional(),
     body('coursing').isString().notEmpty(),
-    body('foodType').isString().notEmpty(),
-    body('color').isString().notEmpty(),
-    body('taxes').isArray().notEmpty(),
+    body('color').isString().optional(),
+    body('taxes').isArray().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   updateValidation: () => [
@@ -18,12 +17,10 @@ module.exports = {
     body('applicablePeriod').isInt().notEmpty(),
     body('roles').isArray().notEmpty(),
     body('isExcludeCheckTax').isBoolean().notEmpty(),
-    body('servingSizes').isArray().notEmpty(),
+    body('servingSizes').isArray().optional(),
     body('coursing').isString().notEmpty(),
-    body('foodType').isString().notEmpty(),
-    body('color').isString().notEmpty(),
-    body('taxes').isArray().notEmpty(),
-    body('store_id').isMongoId().notEmpty()
+    body('color').isString().optional(),
+    body('taxes').isArray().optional()
   ],
   getAllValidation:() =>[
     query('store_id').isMongoId().notEmpty()
