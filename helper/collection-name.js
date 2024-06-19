@@ -15,5 +15,6 @@ module.exports = {
   SERVINGSIZE:"servingsize",
   COURSING:'coursing',
   LOGININFO:'logininfo',
-  CHECKS:'checks'
+  CHECKS:'checks',
+  PAYMENTMETHODS:'paymentMethods'
 };

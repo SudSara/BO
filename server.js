@@ -50,6 +50,7 @@ app.use('/modifierGroup',require('./controller/modifiergroupcontroller'));
 app.use('/servingSize',require('./controller/servingsizecontroller'));
 app.use('/coursing',require('./controller/coursingcontroller'));
 app.use('/checks',require('./controller/checkscontroller'));
+app.use('/paymentMethod',require('./controller/paymentmethodscontroller'));
 
 app.use('*', (req, res) => {
   res.status(404).json({
