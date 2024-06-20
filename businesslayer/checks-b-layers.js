@@ -26,7 +26,6 @@ module.exports = {
             });
         })
     },
-
     getCheckByDateRange(body){
         let { start_date, end_date } = body;
 
