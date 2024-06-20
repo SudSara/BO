@@ -23,14 +23,13 @@ router.get('/:id',(req,res,next)=>{
 });
 
 router.post('/getbydate',(req,res,next)=>{
-    checksBusinessLayer.getCheckById(req.body).then((data)=>{
+    checksBusinessLayer.getCheckByDateRange(req.body).then((data)=>{
     res.send(data)
   })
   .catch((err)=>{
     next(err);
   })
 });
-
 
 
 module.exports = router;
