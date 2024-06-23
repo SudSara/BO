@@ -38,6 +38,7 @@ module.exports = {
     updateMenuitems(menuitemRequest) {
         let { params, body } = menuitemRequest;
         body.updated_at = new Date();
+        body.store_id = ObjectId(body.store_id)
         let queryPayload = {
             _id: ObjectId(params.menuitem_id),
         }
