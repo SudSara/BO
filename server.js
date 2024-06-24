@@ -51,6 +51,7 @@ app.use('/servingSize',require('./controller/servingsizecontroller'));
 app.use('/coursing',require('./controller/coursingcontroller'));
 app.use('/checks',require('./controller/checkscontroller'));
 app.use('/paymentMethod',require('./controller/paymentmethodscontroller'));
+app.use('/accounts',require('./controller/accountcontroller'));
 
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -63,7 +64,6 @@ app.use('*', (req, res) => {
   });
 });
 app.use((err, req, res, next) => {
-  console.error(err.stack)
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
   res.status(err.statusCode).json({

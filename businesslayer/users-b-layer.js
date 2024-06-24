@@ -132,6 +132,7 @@ module.exports = {
                         email: 1,
                         password: { $arrayElemAt: [ '$privatedata.password', 0 ] },
                         user_secure_id:{ $arrayElemAt: [ '$privatedata._id', 0 ] },
+                        user_id:{$arrayElemAt:['$privatedata.user_id',0]},
                         primary:1,
                         phone_number:1,
                         business_type:1
@@ -141,11 +142,11 @@ module.exports = {
             getdb(STORES)
             .aggregate(query)
             .toArray(async(err, result) => {
-                console.log(result,"fgdgf")
                 if (err) {
                 reject(err);
                 }
-                if (result.length == 1) {
+                let license_no;
+                if (result?.length == 1) {
                 const user = result[0];
                 const passwordMatch = user.password == option.password;
                 const token_code = {
@@ -161,28 +162,51 @@ module.exports = {
                     resolve(response);
                 } else {
                     try{
-                    let account_data = await getdb(ACCOUNTS).findOne({"_id":ObjectId(user.account_id)});
-                    let u_s_data = await getdb(LOGININFO).find({account_id:ObjectId(user.account_id),"logged_in":true}).toArray();
-                    if(!account_data?.stores_count){
-                        return resolve({success:false,message:'invalid account'})
-                    }
-                    if(account_data?.stores_count <= u_s_data.length){
-                        return resolve({success:false,message:'store login limit excited'})
-                    }
+                        let account_data = await getdb(ACCOUNTS).findOne({"_id":ObjectId(user.account_id)});
+                        let u_s_data = await getdb(LOGININFO).find({account_id:ObjectId(user.account_id)}).toArray();
+                        if(!account_data?.stores_count){
+                            return resolve({success:false,message:'invalid account'})
+                        }
+                        let logged_user = u_s_data.filter(d => d.logged_in == true);
+                        let ex_l_data = u_s_data.find(d => d.device_id == req.body.device_id);
+                        if(logged_user.length >= account_data?.stores_count && ex_l_data?.logged_in != true){
+                            return resolve({success:false,message:'store login limit excited'})
+                        }
+                        if(ex_l_data?.logged_in){
+                            license_no = ex_l_data.license_no;
+                        }
+                        let pre_logged_user = u_s_data.filter(d => d.logged_in == false);
+                        let l_data = logged_user.find(d=> d.license_no && d.device_id != ex_l_data?.user_id);
+                        if(l_data?.logged_in == false){
+                            license_no =  l_data.license_no;
+                        }else if(pre_logged_user.length > 0){
+                            for(let value of pre_logged_user){
+                                console.log(value)
+                                let d_data = logged_user.filter(d=> d.license_no == value.license_no);
+                                if(d_data.length == 0){
+                                    license_no = value.license_no;
+                                    break
+                                }
+                            }
+                                
+                        }else{
+                            license_no = u_s_data.length + 1;
+                        }
                     const token_info = {
                         user: {
                         _id: user._id,
                         email: user.email,
+                        license_no:license_no
                         },
                         token_code
                     };
+                    await getdb(LOGININFO).updateOne({account_id:ObjectId(user.account_id),store_id:ObjectId(user._id),"device_id":req.body.device_id},{$set:{'device_name':req.body.device_name,'device_type':req.body.device_type,"logged_in":true,updated_at:new Date(),license_no:license_no,"user_id":user.user_id}},{upsert:true});
                     const token = jwt.sign(
                         {
                         token_info,
                         },
                         'hG6j!68Mgd3r!',
                     );
-                    await getdb(LOGININFO).updateOne({account_id:ObjectId(user.account_id),store_id:ObjectId(user._id),"device_id":req.body.device_id},{$set:{'device_name':req.body.device_name,'device_type':req.body.device_type,"logged_in":true,updated_at:new Date(),token:token}},{upsert:true});
                     resolve({
                         success: true,
                         token,
@@ -191,7 +215,8 @@ module.exports = {
                         email: user.email,
                         primary:user.primary ? true:false,
                         phone_number:user.phone_number,
-                        business_type:user.business_type
+                        business_type:user.business_type,
+                        license_no:license_no
                         },
                     });
                     }catch(err){
