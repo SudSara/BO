@@ -19,13 +19,13 @@ router.post('/', validation.createUserValidation(), (req, res, next) => {
         });
 });
 
-router.get('/', validation.getAllValidation(), (req, res, next) => {
+router.get('/store/:store_id', validation.getAllValidation(), (req, res, next) => {
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     usersBusinessLayer
-        .getAllUsers(req.query)
+        .getAllUsers(req.params)
         .then((data) => {
             res.send(data);
         })
@@ -54,7 +54,7 @@ router.put('/:user_id', validation.updateOrdeleteValidation(), (req, res, next) 
         });
 });
 
-router.get('/:id', validation.getAllValidation(),(req, res, next) => {
+router.get('/:id',(req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });

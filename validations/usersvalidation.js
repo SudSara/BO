@@ -1,4 +1,4 @@
-const { body ,query, oneOf} = require('express-validator');
+const { body ,query, oneOf, param} = require('express-validator');
 
 module.exports = {
   createUserValidation: () => [
@@ -33,7 +33,7 @@ module.exports = {
     body('account_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
-    query('account_id').isMongoId().notEmpty()
+    param('store_id').isMongoId().notEmpty()
   ],
   updateOrdeleteValidation: () => [
     oneOf([
