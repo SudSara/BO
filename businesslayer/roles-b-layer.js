@@ -34,7 +34,6 @@ module.exports = {
     updateRoles(roleRequest) {
         let { params, body } = roleRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.role_id),
             store_id: body.store_id

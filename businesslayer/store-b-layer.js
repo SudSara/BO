@@ -118,14 +118,14 @@ module.exports = {
                     'from': 'modifiers', 
                     'localField': '_id', 
                     'foreignField': 'store_id', 
-                    'as': 'users'
+                    'as': 'modifiers'
                   }
                 },{
                   '$lookup': {
                     'from': 'modifierGroups', 
                     'localField': '_id', 
                     'foreignField': 'store_id', 
-                    'as': 'users'
+                    'as': 'modifierGroups'
                   }
                 },
                 {
@@ -133,9 +133,18 @@ module.exports = {
                     'from': 'servingsize', 
                     'localField': '_id', 
                     'foreignField': 'store_id', 
-                    'as': 'users'
+                    'as': 'servingsize'
+                  }
+                },
+                {
+                  '$lookup': {
+                    'from': 'coursing', 
+                    'localField': '_id', 
+                    'foreignField': 'store_id', 
+                    'as': 'coursing'
                   }
                 }
+                
             ]
             getdb(STORES).aggregate(query).toArray((err,result)=>{
                 if(err){
