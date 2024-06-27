@@ -34,7 +34,6 @@ module.exports = {
     updateServingSizes(servingsizeRequest) {
         let { params, body } = servingsizeRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.servingsize_id),
             store_id: body.store_id

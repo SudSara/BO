@@ -38,7 +38,6 @@ module.exports = {
     updateMenuitems(menuitemRequest) {
         let { params, body } = menuitemRequest;
         body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id)
         let queryPayload = {
             _id: ObjectId(params.menuitem_id),
         }
@@ -74,8 +73,7 @@ module.exports = {
         let { params, query } = req;
         return new Promise((resolve, reject) => {
             let queryPayload = {
-                _id: ObjectId(params.menuitem_id),
-                store_id: ObjectId(query.store_id)
+                _id: ObjectId(params.menuitem_id)
             }
             getdb(MENUITEMS).deleteOne(queryPayload, (err, result) => {
                 if (err) {
