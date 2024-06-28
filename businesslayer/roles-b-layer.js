@@ -35,8 +35,7 @@ module.exports = {
         let { params, body } = roleRequest;
         body.updated_at = new Date();
         let queryPayload = {
-            _id: ObjectId(params.role_id),
-            store_id: body.store_id
+            _id: ObjectId(params.role_id)
         }
         return new Promise((resolve, reject) => {
             getdb(ROLES).updateOne(queryPayload, { $set: body }, (err, result) => {

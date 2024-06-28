@@ -8,6 +8,7 @@ module.exports = {
         modifierGroup.created_at = new Date();
         modifierGroup.updated_at = new Date();
         modifierGroup.store_id = ObjectId(modifierGroup.store_id);
+        modifierGroup.isActive = true;
         return new Promise((resolve, reject) => {
             getdb(MODIFIERGROUP).insertOne(modifierGroup, async (err, result) => {
                 if (err) {

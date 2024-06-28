@@ -8,6 +8,7 @@ module.exports = {
         discount.created_at = new Date();
         discount.updated_at = new Date();
         discount.store_id = ObjectId(discount.store_id);
+        discount.isActive = true;
         return new Promise((resolve, reject) => {
             getdb(DISCOUNTS).insertOne(discount, async (err, result) => {
                 if (err) {

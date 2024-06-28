@@ -8,6 +8,7 @@ module.exports = {
         servingsize.created_at = new Date();
         servingsize.updated_at = new Date();
         servingsize.store_id = ObjectId(servingsize.store_id);
+        servingsize.isActive = true;
         return new Promise((resolve, reject) => {
             getdb(SERVINGSIZE).insertOne(servingsize, async (err, result) => {
                 if (err) {
