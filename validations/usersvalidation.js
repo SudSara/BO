@@ -1,4 +1,4 @@
-const { body ,query, oneOf, param} = require('express-validator');
+const { body , oneOf, param} = require('express-validator');
 
 module.exports = {
   createUserValidation: () => [
