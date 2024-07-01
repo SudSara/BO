@@ -54,6 +54,8 @@ app.use('/paymentMethod',require('./controller/paymentmethodscontroller'));
 app.use('/accounts',require('./controller/accountcontroller'));
 app.use('/clockInOut',require('./controller/clockinoutcontroller'));
 app.use('/logs',require('./controller/logscontroller'));
+app.use('/paymentType',require('./controller/paymenttypescontroller'));
+
 
 app.use('*', (req, res) => {
   res.status(404).json({
