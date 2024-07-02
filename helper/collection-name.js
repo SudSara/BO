@@ -16,5 +16,8 @@ module.exports = {
   COURSING:'coursing',
   LOGININFO:'logininfo',
   CHECKS:'checks',
-  PAYMENTMETHODS:'paymentMethods'
+  PAYMENTMETHODS:'paymentMethods',
+  CLOCKINOUT:'clockinout',
+  LOGS:'logs',
+  PAYMENTTYPES:'paymentTypes'
 };
