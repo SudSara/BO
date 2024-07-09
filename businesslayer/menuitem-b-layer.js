@@ -1,4 +1,4 @@
-const { MENUITEMS } = require('../helper/collection-name');
+const { MENUITEMS, CATEGORY, TAXES } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const xlsx = require('xlsx');
@@ -96,40 +96,55 @@ module.exports = {
             for (let i = 0; i < xlData.length; i++) {
                 const data = xlData[i];
                 // Check if name already exists in the database
-                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name});
+                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.Name ?? data.name});
     
                 if (existingDoc) {
                     // Name exists, prepare response with existing document details
                     existingRecords.push({
-                        message: `'${data.name}' Menu item is aready exists!...`,
+                        message: `'${data.Name ?? data.name}' Menu item is aready exists!...`,
                         existingRecord: existingDoc
                     });
                 } else {
+                    const getCategory = await getdb(CATEGORY).findOne({ name: data.level});
+
+                    // const getTaxes = await getdb(TAXES).findOne({ name: data.Taxes});
+                    const getTaxes = data.Taxes.split(',').map(name => name.replace(/"/g, '').trim());
+                    const taxIds = [];
+                    for (const taxName of getTaxes) {
+                        const tax = await getdb(TAXES).findOne({ name: taxName});
+                        if (tax) {
+                            taxIds.push(tax._id); // Assuming _id is the field containing the tax ID
+                        } else {
+                            console.log(`Tax ${taxName} not found in the database`);
+                            // Handle the case where tax name doesn't exist in the database
+                        }
+                    }
                     // Name does not exist, proceed with update
-                    const query = { name: data.name}; // Replace with your unique identifier
+                    const query = { name: data.Name ?? data.name}; // Replace with your unique identifier
+                    console.log(data)
                     const updateDoc = { 
                         $set: {
-                        applicablePeriod:data.applicablePeriod || "",
+                        applicablePeriod:data.applicablePeriod || 1,
                         level: data.level || "",
-                        category_id: data.category_id || "",
+                        category_id: getCategory._id || "",
                         color: data.color || "",
-                        cost_type: data.cost_type || "",
+                        cost_type: JSON.parse(data.Costtype)[0].name || "Fixed",
                         description: data.description || "",
                         imageUrl: data.imageUrl || "",
-                        measureType: data.measureType || "",
-                        name: data.name || "",
-                        prices: JSON.parse(data.prices) || "",
+                        measureType: JSON.parse(data.measureType)[0].name || "menu item",
+                        name: (data.Name ?? data.name) || "",
+                        prices: {price: `${data.Price}`,size : ""} || "",
                         secondary_name: data.secondary_name || "",
                         skuCode: data.skuCode || "",
                         sub_category_id: data.sub_category_id || "",
-                        taxes: JSON.parse(data.taxes) || "",
+                        taxes: taxIds || "",
+                        timeEvents: JSON.parse(data.timeEvents) || 1,
                         store_id: ObjectId(data.store_id) || ""
-                    } };
+                    }};
                     // Update one document
                     const result = await getdb(MENUITEMS).updateOne(query, updateDoc, { upsert: true });
-    
                     newRecords.push({
-                        message: `'${data.name}' Menu Item uploaded successfully.`
+                        message: `'${data.Name ?? data.name}' Menu Item uploaded successfully.`
                     });
                 }
             }
