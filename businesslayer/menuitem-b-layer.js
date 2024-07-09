@@ -126,7 +126,7 @@ module.exports = {
                         $set: {
                         applicablePeriod:data.applicablePeriod || 1,
                         level: data.level || "",
-                        category_id: getCategory._id || "",
+                        category_id: getCategory && getCategory._id || "",
                         color: data.color || "",
                         cost_type: JSON.parse(data.Costtype)[0].name || "Fixed",
                         description: data.description || "",
