@@ -8,6 +8,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 const authHelper = require('./helper/authHelper');
 const { initDb } = require('./database/db');
+const {initRdb} = require('./database/redish');
+
+
 
 const port = 8080;
 // Body-parser middleware
@@ -77,6 +80,7 @@ app.use((err, req, res, next) => {
       stack: err.stack
   });
 })
+
 initDb().then(() => {
   try {
     app.listen(port, (err) => {
@@ -87,4 +91,8 @@ initDb().then(() => {
   } catch (err) {
     console.log(err);
   }
+})
+initRdb().then(()=>{
+}).catch(err=>{
+  console.log(err)
 });

@@ -44,7 +44,7 @@ router.put('/:user_id', validation.updateOrdeleteValidation(), (req, res, next) 
         query = usersBusinessLayer
         .updateUsers(req)
     }else {
-        query = usersBusinessLayer.deleteUsersById(req);
+       // query = usersBusinessLayer.deleteUsersById(req);
     }
     query.then((data) => {
             res.send(data);

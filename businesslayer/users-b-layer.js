@@ -54,8 +54,7 @@ module.exports = {
         let { params, body } = userRequest;
         body.updated_at = new Date();
         let queryPayload = {
-            _id: ObjectId(params.user_id),
-            store_id: ObjectId(body.store_id),
+            _id: ObjectId(params.user_id)
         }
         return new Promise((resolve, reject) => {
             getdb(USERS).updateOne(queryPayload, { $set: body }, (err, result) => {
@@ -89,8 +88,7 @@ module.exports = {
         let { params, query } = req;
         return new Promise((resolve, reject) => {
             let queryPayload = {
-                _id: ObjectId(params.user_id),
-                store_id: ObjectId(query.store_id)
+                _id: ObjectId(params.user_id)
             }
             getdb(USERS).deleteOne(queryPayload, (err, result) => {
                 if (err) {
@@ -206,18 +204,22 @@ module.exports = {
                         },
                         'hG6j!68Mgd3r!',
                     );
-                    resolve({
+                    let d_data= {
                         success: true,
                         token,
                         user: {
-                        _id: user._id,
+                        store_id: user._id,
                         email: user.email,
                         primary:user.primary ? true:false,
                         phone_number:user.phone_number,
                         business_type:user.business_type,
                         license_no:license_no
                         },
-                    });
+                    }
+                    if(user.primary){
+                        d_data.account_id=user.account_id;
+                    }
+                    resolve(d_data);
                     }catch(err){
                     reject(err);
                     }
