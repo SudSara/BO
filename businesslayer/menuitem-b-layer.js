@@ -96,7 +96,7 @@ module.exports = {
             for (let i = 0; i < xlData.length; i++) {
                 const data = xlData[i];
                 // Check if name already exists in the database
-                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name,store_id:ObjectId(data.store_id) });
+                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name});
     
                 if (existingDoc) {
                     // Name exists, prepare response with existing document details
@@ -106,7 +106,7 @@ module.exports = {
                     });
                 } else {
                     // Name does not exist, proceed with update
-                    const query = { name: data.name,store_id:ObjectId(data.store_id) }; // Replace with your unique identifier
+                    const query = { name: data.name}; // Replace with your unique identifier
                     const updateDoc = { 
                         $set: {
                         applicablePeriod:data.applicablePeriod || "",
