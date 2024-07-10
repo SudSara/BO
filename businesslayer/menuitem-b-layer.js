@@ -105,7 +105,7 @@ module.exports = {
                         existingRecord: existingDoc
                     });
                 } else {
-                    const getCategory = await getdb(CATEGORY).findOne({ name: data.level});
+                    const getCategory = await getdb(CATEGORY).findOne({ name: data.category});
 
                     // const getTaxes = await getdb(TAXES).findOne({ name: data.Taxes});
                     const getTaxes = data.Taxes.split(',').map(name => name.replace(/"/g, '').trim());
@@ -121,25 +121,24 @@ module.exports = {
                     }
                     // Name does not exist, proceed with update
                     const query = { name: data.Name ?? data.name}; // Replace with your unique identifier
-                    console.log(data)
                     const updateDoc = { 
                         $set: {
-                        applicablePeriod:data.applicablePeriod || 1,
-                        level: data.level || "",
-                        category_id: getCategory && getCategory._id || "",
-                        color: data.color || "",
-                        cost_type: JSON.parse(data.Costtype)[0].name || "Fixed",
-                        description: data.description || "",
-                        imageUrl: data.imageUrl || "",
-                        measureType: JSON.parse(data.measureType)[0].name || "menu item",
-                        name: (data.Name ?? data.name) || "",
-                        prices: {price: `${data.Price}`,size : ""} || "",
-                        secondary_name: data.secondary_name || "",
-                        skuCode: data.skuCode || "",
-                        sub_category_id: data.sub_category_id || "",
-                        taxes: taxIds || "",
-                        timeEvents: JSON.parse(data.timeEvents) || 1,
-                        store_id: ObjectId(data.store_id) || ""
+                            applicablePeriod:data.applicablePeriod || 1,
+                            level: data.level || "Category",
+                            category_id: getCategory && getCategory._id || "",
+                            color: data.color || "blue",
+                            cost_type: data.costType || "Fixed",
+                            description: data.description || "",
+                            imageUrl: data.imageUrl || "",
+                            measureType: data.measureType || "menu item",
+                            name: (data.Name ?? data.name) || "",
+                            prices: {price: `${data.Price}`,size : ""} || "",
+                            secondary_name: data.secondaryName || "",
+                            skuCode: data.skuCode || "",
+                            sub_category_id: data.subCategoryId || "",
+                            taxes: taxIds || "",
+                            timeEvents: data.timeEvents || 1,
+                            store_id: ObjectId(data.storeId) || ""
                     }};
                     // Update one document
                     const result = await getdb(MENUITEMS).updateOne(query, updateDoc, { upsert: true });
