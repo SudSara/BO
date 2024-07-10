@@ -4,18 +4,26 @@ const { ObjectId } = require('mongodb');
 
 module.exports = {
 
-    createCategory(category) {
-        category.created_at = new Date();
-        category.updated_at = new Date();
-        category.store_id = ObjectId(category.store_id);
-        return new Promise((resolve, reject) => {
-            getdb(CATEGORY).insertOne(category, async (err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve({ success: true, category });
-            })
-        })
+    async createCategory(category) {
+        try {
+            category.created_at = new Date();
+            category.updated_at = new Date();
+            category.store_id = ObjectId(category.store_id);
+    
+            // Check if a category with the same name already exists for the same store
+            const existingCategory = await getdb(CATEGORY).findOne({ name: category.name, store_id: category.store_id });
+            if (existingCategory) {
+                throw new Error(`Category with name '${category.name}' already exists for this store.`);
+            }
+    
+            // Insert the category into the database
+            const result = await getdb(CATEGORY).insertOne(category);
+    
+            return { success: true, category };
+        } catch (error) {
+            console.error('Error creating category:', error);
+            throw error; // Re-throw the error to be caught by the caller
+        }
     },
 
     getAllCategory(params) {
@@ -34,20 +42,32 @@ module.exports = {
         });
     },
 
-    updateCategory(req) {
-        let { params, body } = req;
-        body.updated_at = new Date();
-        let queryPayload = {
-            _id: ObjectId(params.category_id),
+    async updateCategory(req) {
+        try {
+            let { params, body } = req;
+            body.updated_at = new Date();
+            let queryPayload = {
+                _id: ObjectId(params.category_id),
+            };
+    
+            // Check if another category with the same name exists for the same store
+            const existingCategory = await getdb(CATEGORY).findOne({ name: body.name, store_id: body.store_id });
+            if (existingCategory) {
+                throw new Error(`Category with name '${body.name}' already exists.`);
+            }
+    
+            // Update the category
+            const result = await getdb(CATEGORY).updateOne(queryPayload, { $set: body });
+    
+            if (result.modifiedCount === 0) {
+                throw new Error(`Category with ID ${params.category_id} not found.`);
+            }
+    
+            return { success: true, body };
+        } catch (error) {
+            console.error('Error updating category:', error);
+            throw error; // Re-throw the error to be caught by the caller
         }
-        return new Promise((resolve, reject) => {
-            getdb(CATEGORY).updateOne(queryPayload, { $set: body }, (err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve({ success: true, body });
-            });
-        })
     },
 
     getCategoryById(data) {
