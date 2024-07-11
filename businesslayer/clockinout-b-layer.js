@@ -32,8 +32,8 @@ module.exports = {
             };
         }
 
-        // Check if shiftRecords already has an entry for the roleID
-        const existingShiftRecordIndex = existingDocument.shiftRecords.findIndex(record => record.roleId === clockInOut.roleId && !record.clockOutStatus);
+        // Check if shiftRecords already has an entry for the employeeId
+        const existingShiftRecordIndex = existingDocument.shiftRecords.findIndex(record => record.employeeId === clockInOut.employeeId && !record.clockOutStatus);
 
         if (existingShiftRecordIndex !== -1) {
             // Update existing shift record with punchOutTime
@@ -42,17 +42,13 @@ module.exports = {
             existingDocument.shiftRecords[existingShiftRecordIndex].totalHours = calculatesShiftHours(existingDocument.shiftRecords[existingShiftRecordIndex].punchInTime, punchOutTime); // Example calculation for total hours
             existingDocument.shiftRecords[existingShiftRecordIndex].clockOutStatus = true; // Example update status
             existingDocument.shiftRecords[existingShiftRecordIndex].employeeId = clockInOut.employeeId;
-            existingDocument.shiftRecords[existingShiftRecordIndex].roleName = clockInOut.roleName;
-            existingDocument.shiftRecords[existingShiftRecordIndex].roleId = clockInOut.roleId;
             existingDocument.shiftRecords[existingShiftRecordIndex].deviceID = clockInOut.deviceID;
             existingDocument.shiftRecords[existingShiftRecordIndex].node = clockInOut.node;
             
         } else {
             // Create new shift record
             const newShiftRecord = {
-                roleId: clockInOut.roleId,
                 employeeId:clockInOut.employeeId,
-                roleName: clockInOut.roleName,
                 punchInTime: formattedTime, // Format as needed
                 punchOutTime: "12:00 AM", // Update based on actual punch out time logic
                 totalHours: "0:00", // Update with actual calculation
@@ -70,7 +66,7 @@ module.exports = {
                 if (err) {
                     return reject(err);
                 }
-                return resolve({ success: true, result: clockInOutResponse(clockInOut,existingDocument.shiftRecords) });
+                return resolve({ success: true, result: clockInOutResponse(clockInOut) });
             })
         })
     },
@@ -84,7 +80,25 @@ module.exports = {
             getdb(CLOCKINOUT).find(clockInDataQuery).toArray()
                 .then((result) => {
                     const shiftRecords = result.map(results => results.shiftRecords).flat();
-                    resolve({ success: true, result : loadClockedInData(shiftRecords) });
+                    resolve({ success: true, result : shiftRecords });
+                })
+                .catch((err) => {
+                    console.error("Error fetching all clockInOut:", err);
+                    reject(err);
+                });
+        });
+    },
+    getEmployeeClockInOuts(clockInData) {
+        const clockInDataQuery = {
+            store_id: ObjectId(clockInData.store_id),
+            businessDate:clockInData.businessDate
+        }
+        return new Promise((resolve, reject) => {
+            getdb(CLOCKINOUT).find(clockInDataQuery).toArray()
+                .then((result) => {
+                    console.log(result)
+                    const shiftRecordsFiltered = result[0].shiftRecords.filter(record => record.employeeId === clockInData.employeeId);
+                    resolve({ success: true, result : shiftRecordsFiltered });
                 })
                 .catch((err) => {
                     console.error("Error fetching all clockInOut:", err);
@@ -95,15 +109,12 @@ module.exports = {
 
 }
 
-function clockInOutResponse(clockInOut,shiftRecords) {
+function clockInOutResponse(clockInOut) {
     return {
         employeeID: clockInOut.employeeID,
-        role: clockInOut.role,
         action: clockInOut.action,
-        shiftRecords: shiftRecords,
-        totalHours: calculateTotalHours(shiftRecords),
         businessDate: clockInOut.businessDate,
-        message: clockInOut.action === "OUT" ? "Clocked Out Successfully" : "Clocked In Successfully",
+        message: clockInOut.action === "OUT" ? false : true,
     };
 }
 
@@ -159,14 +170,4 @@ function calculateTotalHours(shiftRecords) {
     const formattedMinutes = ('0' + totalMinutes).slice(-2);
 
     return `${formattedHours}:${formattedMinutes}`;
-}
-
-function loadClockedInData(records) {
-    const resultMap = {};
-    records.forEach(record => {
-        if(!record.clockOutStatus){
-            resultMap[record.employeeId] = record.roleId;
-        }
-    });
-    return resultMap;
 }

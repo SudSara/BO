@@ -14,7 +14,7 @@ router.post('/',(req, res, next) => {
 });
 
 router.get('/:id',(req,res,next)=>{
-    checksBusinessLayer.getCheckById(req.params).then((data)=>{
+    checksBusinessLayer.getCheckById(req).then((data)=>{
     res.send(data)
   })
   .catch((err)=>{
