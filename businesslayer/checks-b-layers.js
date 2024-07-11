@@ -16,13 +16,19 @@ module.exports = {
             })
         })
     },
-    getCheckById(params){
+    getCheckById(checks){
+        let { params, body } = checks;
+        queryPayload = {
+            '_id': ObjectId(params.id),
+            'store_id': ObjectId(body.store_id),
+            'status':body.status
+        }
         return new Promise((resolve,reject)=>{
-            getdb(CHECKS).findOne({'_id': ObjectId(params.id)},async (err,result)=>{
+            getdb(CHECKS).findOne(queryPayload,async (err,result)=>{
                 if(err){
                     return reject(err);
                 }
-                return resolve({success:true,result});
+                return resolve({success:true,result : result || {} });
             });
         })
     },

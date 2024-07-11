@@ -12,7 +12,6 @@ module.exports = {
         pin = user.pin;
         delete user?.new_password;
         delete user?.confirm_password;
-        delete user?.pin;
         user.store_id = ObjectId(user.store_id);
         return new Promise((resolve, reject) => {
             getdb(USERS).insertOne(user, async (err, result) => {
