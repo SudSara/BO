@@ -1,23 +1,47 @@
-const { MENUITEMS } = require('../helper/collection-name');
+const { MENUITEMS, CATEGORY, TAXES } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const xlsx = require('xlsx');
 
 module.exports = {
 
-    createMenuitem(menuitem) {
-        menuitem.created_at = new Date();
-        menuitem.updated_at = new Date();
-        menuitem.store_id = ObjectId(menuitem.store_id);
-        menuitem.category_id = ObjectId(menuitem.category_id);
+    async createMenuitem(menuitem) {
         return new Promise((resolve, reject) => {
-            getdb(MENUITEMS).insertOne(menuitem, async (err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve({ success: true, result:menuitem });
-            })
-        })
+            try {
+                menuitem.created_at = new Date();
+                menuitem.updated_at = new Date();
+                menuitem.store_id = ObjectId(menuitem.store_id);
+                menuitem.category_id = ObjectId(menuitem.category_id);
+                getdb(MENUITEMS).findOne({ name: menuitem.name, store_id: menuitem.store_id }, (err, existingDoc) => {
+                    if (err) {
+                        return reject(err); // Handle error from findOne
+                    }
+                    
+                    if (existingDoc) {
+                        // Name exists, prepare response with existing document details
+                        return resolve({
+                            success: false,
+                            message: `'${menuitem.name}' Menu item already exists!`,
+                        });
+                    } else {
+                        getdb(MENUITEMS).insertOne(menuitem, (err, result) => {
+                            if (err) {
+                                return reject(err); // Handle error from insertOne
+                            }
+                            return resolve({
+                                success: true,
+                                result: menuitem
+                            });
+                        });
+                    }
+                });
+            } catch (error) {
+                // Handle any synchronous errors
+                console.error('Error in createMenuItem:', error);
+                reject(error);
+            }
+        });
+    
     },
 
     getAllMenuitems(params) {
@@ -36,21 +60,34 @@ module.exports = {
         });
     },
 
-    updateMenuitems(menuitemRequest) {
-        let { params, body } = menuitemRequest;
-        body.updated_at = new Date();
-        body.store_id = ObjectId(body.store_id);
-        let queryPayload = {
-            _id: ObjectId(params.menuitem_id),
+    async updateMenuitems(menuitemRequest) {
+        try {
+            let { params, body } = menuitemRequest;
+            body.updated_at = new Date();
+            body.store_id = ObjectId(body.store_id);
+    
+            let queryPayload = {
+                _id: ObjectId(params.menuitem_id),
+            };
+    
+            // Check if the menu item exists
+            const existingDoc = await getdb(MENUITEMS).findOne({ name: body.name, store_id: body.store_id });
+            if (existingDoc) {
+                throw new Error(`Menu item with the name '${body.name}' is already available for this store.`);
+            }
+
+            // Update the menu item
+            const result = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
+
+            if (result.modifiedCount === 0) {
+                throw new Error(`Menu item with ID ${params.menuitem_id} not found.`);
+            }
+
+        return { success: true, result: body };
+        } catch (error) {
+            console.error('Error updating menu item:', error);
+            throw error; // Re-throw the error to be caught by the caller
         }
-        return new Promise((resolve, reject) => {
-            getdb(MENUITEMS).updateOne(queryPayload, { $set: body }, (err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve({ success: true, result:body });
-            });
-        })
     },
 
     getMenuitemsById(data) {
@@ -89,55 +126,103 @@ module.exports = {
     async readExcelAndUpdateDB(filePath) {
         try {
             const workbook = xlsx.readFile(filePath);
-            const sheet_name_list = workbook.SheetNames;
-            const xlData = xlsx.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+            const sheetName = workbook.SheetNames[0]; // Assuming you are processing the first sheet
+            const xlData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    
             const newRecords = [];
             const existingRecords = [];
+            const categoryRecords = [];
             for (let i = 0; i < xlData.length; i++) {
                 const data = xlData[i];
-                // Check if name already exists in the database
-                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name});
+    
+                // Convert storeId to ObjectId
+                const storeId = ObjectId(data.storeId);
+    
+                // Check if menu item already exists
+                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name, store_id: storeId });
+    
+                // Check if category exists
+                let category_id = "";
+                if (data.category) {
+                    const getCategory = await getdb(CATEGORY).findOne({ name: data.category, store_id: storeId });
+                    console.log(data.category,getCategory)
+                    if (getCategory) {
+                        category_id = getCategory._id;
+                    } else {
+                        categoryRecords.push({
+                            message: `Category '${data.category}' not found for this store`
+                        });
+                        // Handle the case where category doesn't exist
+                        continue; // Skip processing this record
+                    }
+                }
+    
+                // Fetch tax IDs
+                let taxIds = [];
+                if (data.taxes) {
+                    const taxNames = data.taxes.split(',').map(name => name.trim());
+                    for (const taxName of taxNames) {
+                        const tax = await getdb(TAXES).findOne({ name: taxName });
+                        if (tax) {
+                            taxIds.push(tax._id);
+                        } else {
+                            console.log(`Tax '${taxName}' not found in the database`);
+                            // Handle the case where tax doesn't exist
+                        }
+                    }
+                }
+    
+                // Prepare update document
+                const updateDoc = {
+                    $set: {
+                        applicablePeriod: data.applicablePeriod || 1,
+                        level: data.level || "category",
+                        category_id: category_id || "",
+                        color: data.color || "blue",
+                        cost_type: data.costType || "fixed",
+                        description: data.description || "",
+                        imageUrl: data.imageUrl || "",
+                        measureType: data.measureType || "menu item",
+                        name: data.name || "",
+                        prices: { price: data.price || "", size: data.size || "" },
+                        secondary_name: data.secondaryName || "",
+                        skuCode: data.skuCode || "",
+                        sub_category_id: data.subCategoryId || "",
+                        taxes: taxIds,
+                        timeEvents: data.timeEvents || 1,
+                        store_id: storeId,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    }
+                };
     
                 if (existingDoc) {
-                    // Name exists, prepare response with existing document details
+                    // Menu item exists, push to existing records
                     existingRecords.push({
-                        message: `'${data.name}' Menu item is aready exists!...`,
+                        message: `'${data.name}' Menu item already exists!`,
                         existingRecord: existingDoc
                     });
                 } else {
-                    // Name does not exist, proceed with update
-                    const query = { name: data.name}; // Replace with your unique identifier
-                    const updateDoc = { 
-                        $set: {
-                        applicablePeriod:data.applicablePeriod || "",
-                        level: data.level || "",
-                        category_id: data.category_id || "",
-                        color: data.color || "",
-                        cost_type: data.cost_type || "",
-                        description: data.description || "",
-                        imageUrl: data.imageUrl || "",
-                        measureType: data.measureType || "",
-                        name: data.name || "",
-                        prices: JSON.parse(data.prices) || "",
-                        secondary_name: data.secondary_name || "",
-                        skuCode: data.skuCode || "",
-                        sub_category_id: data.sub_category_id || "",
-                        taxes: JSON.parse(data.taxes) || "",
-                        store_id: ObjectId(data.store_id) || ""
-                    } };
-                    // Update one document
+                    // Menu item does not exist, proceed with update or insert
+                    const query = { name: data.name, store_id: storeId };
+    
                     const result = await getdb(MENUITEMS).updateOne(query, updateDoc, { upsert: true });
     
-                    newRecords.push({
-                        message: `'${data.name}' Menu Item uploaded successfully.`
-                    });
+                    if (result.upsertedCount > 0) {
+                        newRecords.push({
+                            message: `'${data.name}' Menu Item uploaded successfully.`
+                        });
+                    } else {
+                        console.log(`Failed to upsert '${data.name}' Menu Item.`);
+                        // Handle failure to upsert
+                    }
                 }
             }
     
-            return { success: true, responses: {newRecords,existingRecords} };
+            return { success: true, result: { newRecords, existingRecords, categoryRecords } };
         } catch (err) {
-            console.error('Error updating documents', err);
-            throw err; // Propagate error for handling in API endpoint
+            console.error('Error updating documents:', err);
+            throw err; // Propagate error for handling in API endpoint or further up the call stack
         }
-    }   
+    }  
 }
