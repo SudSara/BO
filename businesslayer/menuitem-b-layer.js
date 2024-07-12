@@ -64,17 +64,17 @@ module.exports = {
         try {
             let { params, body } = menuitemRequest;
             body.updated_at = new Date();
-            body.store_id = ObjectId(body.store_id);
+            // body.store_id = ObjectId(body.store_id);
     
             let queryPayload = {
                 _id: ObjectId(params.menuitem_id),
             };
     
             // Check if the menu item exists
-            const existingDoc = await getdb(MENUITEMS).findOne({ name: body.name, store_id: body.store_id });
-            if (existingDoc) {
-                throw new Error(`Menu item with the name '${body.name}' is already available for this store.`);
-            }
+            // const existingDoc = await getdb(MENUITEMS).findOne({ name: body.name, store_id: body.store_id });
+            // if (existingDoc) {
+            //     throw new Error(`Menu item with the name '${body.name}' is already available for this store.`);
+            // }
 
             // Update the menu item
             const result = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
@@ -171,7 +171,6 @@ module.exports = {
                         }
                     }
                 }
-    
                 // Prepare update document
                 const updateDoc = {
                     $set: {
@@ -184,15 +183,19 @@ module.exports = {
                         imageUrl: data.imageUrl || "",
                         measureType: data.measureType || "menu item",
                         name: data.name || "",
-                        prices: { price: data.price || "", size: data.size || "" },
+                        price: Number(data.price),
+                        prices: [],
                         secondary_name: data.secondaryName || "",
                         skuCode: data.skuCode || "",
                         sub_category_id: data.subCategoryId || "",
-                        taxes: taxIds,
+                        taxes: taxIds || [],
                         timeEvents: data.timeEvents || 1,
                         store_id: storeId,
                         created_at: new Date(),
-                        updated_at: new Date()
+                        updated_at: new Date(),
+                        included:[],
+                        optional:[],
+                        mandatory:[]
                     }
                 };
     

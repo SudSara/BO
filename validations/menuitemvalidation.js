@@ -16,7 +16,7 @@ module.exports = {
     body('secondary_name').isString().optional(),
     body('skuCode').isString().optional(),
     body('sub_category_id').isString().optional(),
-    body('taxes').isArray().notEmpty(),
+    body('taxes').isArray().optional(),
     body('included').isArray().optional().custom((value, { req }) => {
       if (!Array.isArray(value)) {
         throw new Error('Included must be an array');
@@ -81,7 +81,7 @@ module.exports = {
     body('secondary_name').isString().optional(),
     body('skuCode').isString().optional(),
     body('sub_category_id').isString().optional(),
-    body('taxes').isArray().notEmpty()
+    body('taxes').isArray().optional()
   ],
   getAllValidation:() =>[
     param('store_id').isMongoId().notEmpty()
