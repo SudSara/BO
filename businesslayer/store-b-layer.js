@@ -1,4 +1,4 @@
-const { USER_SECURE_DATA, STORES } = require('../helper/collection-name');
+const { USER_SECURE_DATA, STORES,  LOGININFO} = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 
@@ -153,5 +153,35 @@ module.exports = {
                 return resolve({success:true,result})
             })
         })
+    },
+    loggedDevice(req){
+      return new Promise((resolve,reject)=>{
+        let query =[{
+          $match:{
+            store_id:ObjectId(req.params.store_id)
+          }
+        },{
+          $project:{
+              token:0,
+              updated_at:0
+          }
+      }]
+        getdb(LOGININFO).aggregate(query).toArray((err,result)=>{
+          if(err){
+              return reject(err)
+          }
+          return resolve({success:true,result})
+      })
+      })
+    },
+    loggedOutDevice(req){
+      return new Promise((resolve,reject)=>{
+        getdb(LOGININFO).updateOne({_id:ObjectId(req.params.id)},{$set:{logged_in:false,updated_at:new Date()}},(err,result)=>{
+          if(err){
+              return reject(err)
+          }
+          return resolve({success:true})
+      })
+      })
     }
 }

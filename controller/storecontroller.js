@@ -55,5 +55,22 @@ router.get('/settings/:store_id',(req,res,next)=>{
   .catch((err)=>{
     next(err);
   })
+});
+router.get('/loggeddevice/:store_id',(req,res,next)=>{
+  storeBusinessLayer.loggedDevice(req).then((data)=>{
+    res.send(data);
+  })
+  .catch((err)=>{
+    next(err);
+  })
 })
+router.put('/loggout/:id',(req,res,next)=>{
+  storeBusinessLayer.loggedOutDevice(req).then((data)=>{
+    res.send(data);
+  })
+  .catch((err)=>{
+    next(err);
+  })
+})
+
 module.exports = router;

@@ -165,29 +165,36 @@ module.exports = {
                         }
                         let logged_user = u_s_data.filter(d => d.logged_in == true);
                         let ex_l_data = u_s_data.find(d => d.device_id == req.body.device_id);
+
                         if(logged_user.length >= account_data?.stores_count && ex_l_data?.logged_in != true){
                             return resolve({success:false,message:'store login limit excited'})
                         }
                         if(ex_l_data?.logged_in){
                             license_no = ex_l_data.license_no;
-                        }
-                        let pre_logged_user = u_s_data.filter(d => d.logged_in == false);
-                        let l_data = logged_user.find(d=> d.license_no && d.device_id != ex_l_data?.user_id);
-                        if(l_data?.logged_in == false){
-                            license_no =  l_data.license_no;
-                        }else if(pre_logged_user.length > 0){
-                            for(let value of pre_logged_user){
-                                console.log(value)
-                                let d_data = logged_user.filter(d=> d.license_no == value.license_no);
-                                if(d_data.length == 0){
-                                    license_no = value.license_no;
-                                    break
-                                }
-                            }
-                                
                         }else{
-                            license_no = u_s_data.length + 1;
+                            if(ex_l_data){
+                                let filteredData = u_s_data.filter(d => d.license_no == ex_l_data.license_no);
+                                if(filteredData.length > 1){
+                                    if(u_s_data.length < account_data?.stores_count){
+                                        license_no = u_s_data.length +1; 
+                                    }else{
+                                        let loge_out_data = u_s_data.find(d => d.logged_in == false);
+                                        license_no = loge_out_data.license_no; 
+                                    }
+                                }else{
+                                    license_no = ex_l_data.license_no; 
+                                }
+                            }else{
+                                if(u_s_data.length < account_data?.stores_count){
+                                    license_no = u_s_data.length +1; 
+                                }else{
+                                    let loge_out_data = u_s_data.find(d => d.logged_in == false);
+                                    license_no = loge_out_data.license_no; 
+                                }
+                          
+                            }
                         }
+             
                     const token_info = {
                         user: {
                         _id: user._id,

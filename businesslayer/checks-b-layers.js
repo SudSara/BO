@@ -17,11 +17,9 @@ module.exports = {
         })
     },
     getCheckById(checks){
-        let { params, body } = checks;
+        let { params} = checks;
         queryPayload = {
             '_id': ObjectId(params.id),
-            'store_id': ObjectId(body.store_id),
-            'status':body.status
         }
         return new Promise((resolve,reject)=>{
             getdb(CHECKS).findOne(queryPayload,async (err,result)=>{
@@ -33,8 +31,7 @@ module.exports = {
         })
     },
     getCheckByDateRange(body){
-        let { start_date, end_date } = body;
-
+        let { start_date, end_date, store_id, status } = body;
         start_date = start_date ? parseDateFromString(start_date) : new Date();
         end_date = end_date ? parseDateFromString(end_date) : new Date();
         start_date.setHours(0, 0, 0, 0);
@@ -46,7 +43,9 @@ module.exports = {
                     created_at: {
                         $gte: start_date,
                         $lte: end_date,
-                    }
+                    },
+                    'store_id': ObjectId(body.store_id),
+                    'status':body.status
                 }
             }
         ];
