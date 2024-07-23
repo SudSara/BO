@@ -12,7 +12,10 @@ module.exports = {
                 menuitem.updated_at = new Date();
                 menuitem.store_id = ObjectId(menuitem.store_id);
                 menuitem.category_id = ObjectId(menuitem.category_id);
-                getdb(MENUITEMS).findOne({ name: menuitem.name, store_id: menuitem.store_id }, (err, existingDoc) => {
+
+                // Convert menuitem name to case-insensitive regex pattern
+                const nameRegex = new RegExp(`^${menuitem.name}$`, 'i');
+                getdb(MENUITEMS).findOne({ name: nameRegex, store_id: menuitem.store_id }, (err, existingDoc) => {
                     if (err) {
                         return reject(err); // Handle error from findOne
                     }
@@ -64,31 +67,44 @@ module.exports = {
         try {
             let { params, body } = menuitemRequest;
             body.updated_at = new Date();
-            // body.store_id = ObjectId(body.store_id);
+            body.store_id = ObjectId(body.store_id);
     
             let queryPayload = {
                 _id: ObjectId(params.menuitem_id),
             };
     
-            // Check if the menu item exists
-            // const existingDoc = await getdb(MENUITEMS).findOne({ name: body.name, store_id: body.store_id });
-            // if (existingDoc) {
-            //     throw new Error(`Menu item with the name '${body.name}' is already available for this store.`);
-            // }
-
+            // Fetch all menu items for the store
+            const allMenuItems = await getdb(MENUITEMS).find({ store_id: body.store_id }).toArray();
+    
+            // Check if the updated name already exists for another menu item (case-insensitive)
+            const existingMenuItem = allMenuItems.find(menuItem =>
+                menuItem.name.toLowerCase() === body.name.toLowerCase() &&
+                menuItem._id.toString() !== params.menuitem_id
+            );
+    
+            if (existingMenuItem) {
+                return {
+                    success: false,
+                    message: `Menu item with name '${body.name}' already exists for this store.`,
+                };
+            }
+    
             // Update the menu item
-            const result = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
-
-            if (result.modifiedCount === 0) {
+            const updateResult = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
+    
+            if (updateResult.modifiedCount === 0) {
                 throw new Error(`Menu item with ID ${params.menuitem_id} not found.`);
             }
-
-        return { success: true, result: body };
+    
+            return {
+                success: true,
+                result: body,
+            };
         } catch (error) {
             console.error('Error updating menu item:', error);
             throw error; // Re-throw the error to be caught by the caller
         }
-    },
+    },     
 
     getMenuitemsById(data) {
         return new Promise((resolve, reject) => {
