@@ -107,8 +107,7 @@ module.exports = {
             console.error('Error updating modifier group:', error);
             throw error; // Re-throw the error to be caught by the caller
         }
-    }
-    ,
+    },
 
     getModifierGroupsById(data) {
         return new Promise((resolve, reject) => {
