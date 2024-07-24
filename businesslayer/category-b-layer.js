@@ -5,26 +5,47 @@ const { ObjectId } = require('mongodb');
 module.exports = {
 
     async createCategory(category) {
-        try {
-            category.created_at = new Date();
-            category.updated_at = new Date();
-            category.store_id = ObjectId(category.store_id);
+        return new Promise((resolve, reject) => {
+            try {
+                category.created_at = new Date();
+                category.updated_at = new Date();
+                category.store_id = ObjectId(category.store_id);
     
-            // Check if a category with the same name already exists for the same store
-            const existingCategory = await getdb(CATEGORY).findOne({ name: category.name, store_id: category.store_id });
-            if (existingCategory) {
-                throw new Error(`Category with name '${category.name}' already exists for this store.`);
+                // Convert category name to case-insensitive regex pattern
+                const nameRegex = new RegExp(`^${category.name}$`, 'i');
+    
+                // Check if a category with the same name already exists for the same store (case-insensitive)
+                getdb(CATEGORY).findOne({ name: { $regex: nameRegex }, store_id: category.store_id }, async (err, existingCategory) => {
+                    if (err) {
+                        return reject(err); // Handle error from findOne
+                    }
+    
+                    if (existingCategory) {
+                        // Name exists, prepare response with existing category details
+                        return resolve({
+                            success: false,
+                            message: `Category with name '${category.name}' already exists for this store.`,
+                        });
+                    } else {
+                        // Insert the category into the database
+                        getdb(CATEGORY).insertOne(category, (err, result) => {
+                            if (err) {
+                                return reject(err); // Handle error from insertOne
+                            }
+                            return resolve({
+                                success: true,
+                                category,
+                            });
+                        });
+                    }
+                });
+            } catch (error) {
+                // Handle any synchronous errors
+                console.error('Error creating category:', error);
+                reject(error);
             }
-    
-            // Insert the category into the database
-            const result = await getdb(CATEGORY).insertOne(category);
-    
-            return { success: true, category };
-        } catch (error) {
-            console.error('Error creating category:', error);
-            throw error; // Re-throw the error to be caught by the caller
-        }
-    },
+        });
+    },    
 
     getAllCategory(params) {
         let payload = {
@@ -46,29 +67,42 @@ module.exports = {
         try {
             let { params, body } = req;
             body.updated_at = new Date();
+            body.store_id = ObjectId(body.store_id);
+    
             let queryPayload = {
                 _id: ObjectId(params.category_id),
             };
     
-            // Check if another category with the same name exists for the same store
-            const existingCategory = await getdb(CATEGORY).findOne({ name: body.name, store_id: body.store_id });
+            // Fetch all categories for the store
+            const allCategories = await getdb(CATEGORY).find({ store_id: body.store_id }).toArray();
+    
+            // Check if the updated name already exists for another category (case-insensitive)
+            const existingCategory = allCategories.find(category =>
+                category.name.toLowerCase() === body.name.toLowerCase() &&
+                category._id.toString() !== params.category_id
+            );
+    
             if (existingCategory) {
-                throw new Error(`Category with name '${body.name}' already exists.`);
+                return {
+                    success: false,
+                    message: `Category with name '${body.name}' already exists for this store.`,
+                };
             }
     
             // Update the category
-            const result = await getdb(CATEGORY).updateOne(queryPayload, { $set: body });
-    
+            const result = await getdb(CATEGORY).updateOne(queryPayload, { $set: body })
             if (result.modifiedCount === 0) {
-                throw new Error(`Category with ID ${params.category_id} not found.`);
+                return {
+                    success: false,
+                    message: `Category with ID '${params.category_id}' not found.`,
+                }
             }
-    
-            return { success: true, body };
+            return { success: true, result:body };
         } catch (error) {
             console.error('Error updating category:', error);
             throw error; // Re-throw the error to be caught by the caller
         }
-    },
+    },    
 
     getCategoryById(data) {
         return new Promise((resolve, reject) => {

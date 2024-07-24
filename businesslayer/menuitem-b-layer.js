@@ -2,17 +2,22 @@ const { MENUITEMS, CATEGORY, TAXES } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const xlsx = require('xlsx');
-
+const decodeBearerToken = require('./../helper/getAuthDetails');
 module.exports = {
 
     async createMenuitem(menuitem) {
         return new Promise((resolve, reject) => {
             try {
-                menuitem.created_at = new Date();
-                menuitem.updated_at = new Date();
-                menuitem.store_id = ObjectId(menuitem.store_id);
-                menuitem.category_id = ObjectId(menuitem.category_id);
-                getdb(MENUITEMS).findOne({ name: menuitem.name, store_id: menuitem.store_id }, (err, existingDoc) => {
+                let { body } = menuitem;
+                const getDetail = decodeBearerToken(menuitem.headers.authorization);
+                body.created_at = new Date();
+                body.updated_at = new Date();
+                body.store_id = ObjectId(getDetail.store_id);
+                body.category_id = ObjectId(body.category_id);
+
+                // Convert menuitem name to case-insensitive regex pattern
+                const nameRegex = new RegExp(`^${body.name}$`, 'i');
+                getdb(MENUITEMS).findOne({ name: nameRegex, store_id: body.store_id }, (err, existingDoc) => {
                     if (err) {
                         return reject(err); // Handle error from findOne
                     }
@@ -21,16 +26,16 @@ module.exports = {
                         // Name exists, prepare response with existing document details
                         return resolve({
                             success: false,
-                            message: `'${menuitem.name}' Menu item already exists!`,
+                            message: `'${body.name}' Menu item already exists!`,
                         });
                     } else {
-                        getdb(MENUITEMS).insertOne(menuitem, (err, result) => {
+                        getdb(MENUITEMS).insertOne(body, (err, result) => {
                             if (err) {
                                 return reject(err); // Handle error from insertOne
                             }
                             return resolve({
                                 success: true,
-                                result: menuitem
+                                result: body
                             });
                         });
                     }
@@ -62,33 +67,49 @@ module.exports = {
 
     async updateMenuitems(menuitemRequest) {
         try {
+            const getDetail = decodeBearerToken(menuitemRequest.headers.authorization);
             let { params, body } = menuitemRequest;
             body.updated_at = new Date();
-            // body.store_id = ObjectId(body.store_id);
+            body.store_id = ObjectId(getDetail.store_id);
     
             let queryPayload = {
                 _id: ObjectId(params.menuitem_id),
             };
     
-            // Check if the menu item exists
-            // const existingDoc = await getdb(MENUITEMS).findOne({ name: body.name, store_id: body.store_id });
-            // if (existingDoc) {
-            //     throw new Error(`Menu item with the name '${body.name}' is already available for this store.`);
-            // }
-
-            // Update the menu item
-            const result = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
-
-            if (result.modifiedCount === 0) {
-                throw new Error(`Menu item with ID ${params.menuitem_id} not found.`);
+            // Fetch all menu items for the store
+            const allMenuItems = await getdb(MENUITEMS).find({ store_id: body.store_id }).toArray();
+    
+            // Check if the updated name already exists for another menu item (case-insensitive)
+            const existingMenuItem = allMenuItems.find(menuItem =>
+                menuItem.name.toLowerCase() === body.name.toLowerCase() &&
+                menuItem._id.toString() !== params.menuitem_id
+            );
+    
+            if (existingMenuItem) {
+                return {
+                    success: false,
+                    message: `Menu item with name '${body.name}' already exists for this store.`,
+                };
             }
-
-        return { success: true, result: body };
+    
+            // Update the menu item
+            const updateResult = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
+    
+            if (updateResult.modifiedCount === 0) {
+                return {
+                    success: false,
+                    message: `Menu item with ID '${params.menuitem_id}' not found.`,
+                }
+            }
+            return {
+                success: true,
+                result: body,
+            };
         } catch (error) {
             console.error('Error updating menu item:', error);
             throw error; // Re-throw the error to be caught by the caller
         }
-    },
+    },     
 
     getMenuitemsById(data) {
         return new Promise((resolve, reject) => {
@@ -123,8 +144,9 @@ module.exports = {
         });
     },
 
-    async readExcelAndUpdateDB(filePath) {
+    async readExcelAndUpdateDB(filePath,req) {
         try {
+            const getDetail = decodeBearerToken(req.headers.authorization);
             const workbook = xlsx.readFile(filePath);
             const sheetName = workbook.SheetNames[0]; // Assuming you are processing the first sheet
             const xlData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -136,16 +158,18 @@ module.exports = {
                 const data = xlData[i];
     
                 // Convert storeId to ObjectId
-                const storeId = ObjectId(data.storeId);
+                const storeId = ObjectId(getDetail.store_id);
     
                 // Check if menu item already exists
-                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name, store_id: storeId });
+                const menuNameRegex = new RegExp(`^${data.name}$`, 'i');
+                const existingDoc = await getdb(MENUITEMS).findOne({ name: menuNameRegex, store_id: storeId });
     
                 // Check if category exists
                 let category_id = "";
                 if (data.category) {
-                    const getCategory = await getdb(CATEGORY).findOne({ name: data.category, store_id: storeId });
-                    console.log(data.category,getCategory)
+                    const categoryNameRegex = new RegExp(`^${data.category}$`, 'i');
+                    const getCategory = await getdb(CATEGORY).findOne({ name: categoryNameRegex, store_id: storeId });
+                    console.log(data.category,getCategory,getDetail)
                     if (getCategory) {
                         category_id = getCategory._id;
                     } else {
@@ -162,7 +186,8 @@ module.exports = {
                 if (data.taxes) {
                     const taxNames = data.taxes.split(',').map(name => name.trim());
                     for (const taxName of taxNames) {
-                        const tax = await getdb(TAXES).findOne({ name: taxName });
+                        const taxRegex = new RegExp(`^${taxName}$`, 'i');
+                        const tax = await getdb(TAXES).findOne({ name: taxRegex });
                         if (tax) {
                             taxIds.push(tax._id);
                         } else {

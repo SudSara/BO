@@ -25,7 +25,7 @@ module.exports = {
     body('attachCustomer').isBoolean().optional(),
     body('color').isString().optional(),
     body('discountRules').isArray().notEmpty(),
-    body('isActive').isString().notEmpty(),
+    body('isActive').isBoolean().notEmpty(),
 
   ],
   getAllValidation:() =>[

@@ -25,7 +25,7 @@ router.post('/', validation.createMenuitemValidation(), (req, res, next) => {
         return res.status(400).json({ errors: errors.array() });
     }
     menuitemsBusinessLayer
-        .createMenuitem(req.body, res)
+        .createMenuitem(req, res)
         .then((data) => {
             res.send(data);
         })
@@ -86,7 +86,7 @@ router.post('/bulkUpload', upload.single('menuitem-bulk-upload'), async (req, re
     let newPath = __dirname.replace('/controller', '/');
     const filePath = path.join(newPath, 'bulk-upload', req.file.filename); // Constructing the file path
     try {
-        const result = await menuitemsBusinessLayer.readExcelAndUpdateDB(filePath);
+        const result = await menuitemsBusinessLayer.readExcelAndUpdateDB(filePath,req);
         res.send(result);
     } catch (err) {
         next(err);
