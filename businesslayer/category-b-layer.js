@@ -91,7 +91,12 @@ module.exports = {
     
             // Update the category
             const result = await getdb(CATEGORY).updateOne(queryPayload, { $set: body })
-    
+            if (result.modifiedCount === 0) {
+                return {
+                    success: false,
+                    message: `Category with ID '${params.category_id}' not found.`,
+                }
+            }
             return { success: true, result:body };
         } catch (error) {
             console.error('Error updating category:', error);

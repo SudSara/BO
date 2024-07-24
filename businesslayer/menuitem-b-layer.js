@@ -93,9 +93,11 @@ module.exports = {
             const updateResult = await getdb(MENUITEMS).updateOne(queryPayload, { $set: body });
     
             if (updateResult.modifiedCount === 0) {
-                throw new Error(`Menu item with ID ${params.menuitem_id} not found.`);
+                return {
+                    success: false,
+                    message: `Menu item with ID '${params.menuitem_id}' not found.`,
+                }
             }
-    
             return {
                 success: true,
                 result: body,

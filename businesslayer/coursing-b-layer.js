@@ -57,14 +57,14 @@ module.exports = {
         try {
             let { params, body } = coursingRequest;
             body.updated_at = new Date();
-            // body.store_id = ObjectId(body.store_id);
+            body.store_id = ObjectId(body.store_id);
     
             let queryPayload = {
                 _id: ObjectId(params.coursing_id)
             };
     
             // Fetch all coursings for the store
-            const allCoursings = await getdb(COURSING).find().toArray();
+            const allCoursings = await getdb(COURSING).find({ store_id: body.store_id }).toArray();
     
             // Check if the updated name already exists for another coursing (case-insensitive)
             const existingCoursing = allCoursings.find(coursing =>
@@ -80,6 +80,12 @@ module.exports = {
             }    
             // Update the coursing
             const updateResult = await getdb(COURSING).updateOne(queryPayload, { $set: body });
+            if (updateResult.modifiedCount === 0) {
+                return {
+                    success: false,
+                    message: `Coursing with ID '${params.coursing_id}' not found.`,
+                }
+            }
             return { success: true, result: body };
         } catch (error) {
             console.error('Error updating coursing:', error);
