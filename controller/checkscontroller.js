@@ -31,5 +31,13 @@ router.post('/getbydate',(req,res,next)=>{
   })
 });
 
+router.post('/getbydate/active',(req,res,next)=>{
+  checksBusinessLayer.getCheckByDateRangewithactive(req.body).then((data)=>{
+    res.send(data)
+  })
+  .catch((err)=>{
+    next(err);
+  })
+});
 
 module.exports = router;
