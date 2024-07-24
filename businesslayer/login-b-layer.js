@@ -229,13 +229,12 @@ module.exports = {
                   success: true,
                   token,
                   user: {
-                    _id: user._id,
-                    store_id:user._id,
+                    store_id: user._id,
+                    account_id:user.primary ? user.account_id:null,
                     email: user.email,
                     primary:user.primary ? true:false,
                     phone_number:user.phone_number,
                     business_type:user.business_type
-
                   },
                 });
               }catch(err){

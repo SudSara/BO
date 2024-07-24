@@ -131,7 +131,15 @@ module.exports = {
                         user_id:{$arrayElemAt:['$privatedata.user_id',0]},
                         primary:1,
                         phone_number:1,
-                        business_type:1
+                        business_type:1,
+                        languages:1,
+                        address_line_1:1,
+                        address_line_2:1,
+                        city:1,
+                        state:1,
+                        zipcode:1,
+                        country:1
+
                     },
                 },
             ];
@@ -219,7 +227,14 @@ module.exports = {
                         primary:user.primary ? true:false,
                         phone_number:user.phone_number,
                         business_type:user.business_type,
-                        license_no:license_no
+                        license_no:license_no,
+                        languages:user.languages,
+                        address_line_1:user.address_line_1,
+                        address_line_2:user.address_line_2,
+                        city:user.city,
+                        state:user.state,
+                        zipcode:user.zipcode,
+                        country:user.country
                         },
                     }
                     if(user.primary){
