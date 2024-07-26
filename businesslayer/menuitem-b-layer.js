@@ -2,22 +2,20 @@ const { MENUITEMS, CATEGORY, TAXES } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const xlsx = require('xlsx');
-const decodeBearerToken = require('./../helper/getAuthDetails');
+
 module.exports = {
 
     async createMenuitem(menuitem) {
         return new Promise((resolve, reject) => {
             try {
-                let { body } = menuitem;
-                const getDetail = decodeBearerToken(menuitem.headers.authorization);
-                body.created_at = new Date();
-                body.updated_at = new Date();
-                body.store_id = ObjectId(getDetail.store_id);
-                body.category_id = ObjectId(body.category_id);
+                menuitem.created_at = new Date();
+                menuitem.updated_at = new Date();
+                menuitem.store_id = ObjectId(menuitem.store_id);
+                menuitem.category_id = ObjectId(menuitem.category_id);
 
                 // Convert menuitem name to case-insensitive regex pattern
-                const nameRegex = new RegExp(`^${body.name}$`, 'i');
-                getdb(MENUITEMS).findOne({ name: nameRegex, store_id: body.store_id }, (err, existingDoc) => {
+                const nameRegex = new RegExp(`^${menuitem.name}$`, 'i');
+                getdb(MENUITEMS).findOne({ name: nameRegex, store_id: menuitem.store_id }, (err, existingDoc) => {
                     if (err) {
                         return reject(err); // Handle error from findOne
                     }
@@ -26,16 +24,16 @@ module.exports = {
                         // Name exists, prepare response with existing document details
                         return resolve({
                             success: false,
-                            message: `'${body.name}' Menu item already exists!`,
+                            message: `'${menuitem.name}' Menu item already exists!`,
                         });
                     } else {
-                        getdb(MENUITEMS).insertOne(body, (err, result) => {
+                        getdb(MENUITEMS).insertOne(menuitem, (err, result) => {
                             if (err) {
                                 return reject(err); // Handle error from insertOne
                             }
                             return resolve({
                                 success: true,
-                                result: body
+                                result: menuitem
                             });
                         });
                     }
@@ -67,10 +65,9 @@ module.exports = {
 
     async updateMenuitems(menuitemRequest) {
         try {
-            const getDetail = decodeBearerToken(menuitemRequest.headers.authorization);
             let { params, body } = menuitemRequest;
             body.updated_at = new Date();
-            body.store_id = ObjectId(getDetail.store_id);
+            body.store_id = ObjectId(body.store_id);
     
             let queryPayload = {
                 _id: ObjectId(params.menuitem_id),
@@ -144,9 +141,8 @@ module.exports = {
         });
     },
 
-    async readExcelAndUpdateDB(filePath,req) {
+    async readExcelAndUpdateDB(filePath) {
         try {
-            const getDetail = decodeBearerToken(req.headers.authorization);
             const workbook = xlsx.readFile(filePath);
             const sheetName = workbook.SheetNames[0]; // Assuming you are processing the first sheet
             const xlData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -158,18 +154,16 @@ module.exports = {
                 const data = xlData[i];
     
                 // Convert storeId to ObjectId
-                const storeId = ObjectId(getDetail.store_id);
+                const storeId = ObjectId(data.storeId);
     
                 // Check if menu item already exists
-                const menuNameRegex = new RegExp(`^${data.name}$`, 'i');
-                const existingDoc = await getdb(MENUITEMS).findOne({ name: menuNameRegex, store_id: storeId });
+                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name, store_id: storeId });
     
                 // Check if category exists
                 let category_id = "";
                 if (data.category) {
-                    const categoryNameRegex = new RegExp(`^${data.category}$`, 'i');
-                    const getCategory = await getdb(CATEGORY).findOne({ name: categoryNameRegex, store_id: storeId });
-                    console.log(data.category,getCategory,getDetail)
+                    const getCategory = await getdb(CATEGORY).findOne({ name: data.category, store_id: storeId });
+                    console.log(data.category,getCategory)
                     if (getCategory) {
                         category_id = getCategory._id;
                     } else {
@@ -186,8 +180,7 @@ module.exports = {
                 if (data.taxes) {
                     const taxNames = data.taxes.split(',').map(name => name.trim());
                     for (const taxName of taxNames) {
-                        const taxRegex = new RegExp(`^${taxName}$`, 'i');
-                        const tax = await getdb(TAXES).findOne({ name: taxRegex });
+                        const tax = await getdb(TAXES).findOne({ name: taxName });
                         if (tax) {
                             taxIds.push(tax._id);
                         } else {

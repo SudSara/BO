@@ -71,12 +71,13 @@ module.exports = {
         try {
             let { params, body } = roleRequest;
             body.updated_at = new Date();
+            body.store_id = ObjectId(body.store_id);
             let queryPayload = {
                 _id: ObjectId(params.role_id)
             };
     
             // Fetch all roles (assuming ROLES is your collection name)
-            const allRoles = await getdb(ROLES).find({}).toArray();
+            const allRoles = await getdb(ROLES).find({ store_id: body.store_id }).toArray();
     
             // Check if the updated name already exists for another role (case-insensitive)
             const existingRole = allRoles.find(role =>

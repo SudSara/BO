@@ -214,7 +214,6 @@ module.exports = {
                   user: {
                     _id: user._id,
                     email: user.email,
-                    store_id: user.store_id
                   },
                   token_code
                 };

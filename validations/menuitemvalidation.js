@@ -63,7 +63,8 @@ module.exports = {
         });
       });
       return true;
-    })
+    }),
+    body('store_id').isMongoId().notEmpty()
   ],
   updateMenuitemDetailValidation: () => [
     body('applicablePeriod').isInt().notEmpty(),
