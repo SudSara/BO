@@ -155,14 +155,17 @@ module.exports = {
     
                 // Convert storeId to ObjectId
                 const storeId = ObjectId(data.storeId);
+
+                const nameRegex = new RegExp(`^${data.name}$`, 'i');
     
                 // Check if menu item already exists
-                const existingDoc = await getdb(MENUITEMS).findOne({ name: data.name, store_id: storeId });
+                const existingDoc = await getdb(MENUITEMS).findOne({ name: nameRegex, store_id: storeId });
     
                 // Check if category exists
                 let category_id = "";
                 if (data.category) {
-                    const getCategory = await getdb(CATEGORY).findOne({ name: data.category, store_id: storeId });
+                    const categoryRegex = new RegExp(`^${data.category}$`, 'i');
+                    const getCategory = await getdb(CATEGORY).findOne({ name: categoryRegex, store_id: storeId });
                     console.log(data.category,getCategory)
                     if (getCategory) {
                         category_id = getCategory._id;
