@@ -7,7 +7,7 @@ module.exports = {
     body('openCashDrawer').isBoolean(),
     body('paymentPriority').isInt(),
     body('paymentType').isString().notEmpty(),
-    body('isActive').isBoolean().notEmpty(),
+    body('isActive').isBoolean().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   updatePaymentMethodDetailValidation: () => [
@@ -16,7 +16,7 @@ module.exports = {
     body('openCashDrawer').isBoolean(),
     body('paymentPriority').isInt(),
     body('paymentType').isString().notEmpty(),
-    body('isActive').isBoolean().notEmpty(),
+    body('isActive').isBoolean().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[
