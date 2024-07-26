@@ -3,18 +3,18 @@ const { body ,query, param, oneOf} = require('express-validator');
 module.exports = {
   createTaxValidation: () => [
     body('name').isString().notEmpty(),
-    body('applyTo').isInt().notEmpty(),
-    body('taxType').isInt().notEmpty(),
-    body('isDefault').isBoolean().notEmpty(),
-    body('isQuantity').isBoolean().notEmpty(),
-    body('isInclusive').isBoolean().notEmpty(),
-    body('isApplyonSubtotal').isBoolean().notEmpty(),
-    body('percentage').isInt().notEmpty(),
+    body('applyTo').isInt().optional(),
+    body('taxType').isInt().optional(),
+    body('isDefault').isBoolean().optional(),
+    body('isQuantity').isBoolean().optional(),
+    body('isInclusive').isBoolean().optional(),
+    body('isApplyonSubtotal').isBoolean().optional(),
+    body('percentage').isInt().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   updateTaxDetailValidation: () => [
     body('name').isString().notEmpty(),
-    body('taxType').isInt().notEmpty(),
+    body('taxType').isInt().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   getAllValidation:() =>[

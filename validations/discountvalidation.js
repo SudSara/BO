@@ -11,7 +11,7 @@ module.exports = {
     body('roles').isArray().optional(),
     body('attachCustomer').isBoolean().optional(),
     body('color').isString().optional(),
-    body('discountRules').isArray().notEmpty(),
+    body('discountRules').isArray().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   updateDiscountDetailValidation: () => [
@@ -24,8 +24,9 @@ module.exports = {
     body('roles').isArray().optional(),
     body('attachCustomer').isBoolean().optional(),
     body('color').isString().optional(),
-    body('discountRules').isArray().notEmpty(),
-    body('isActive').isBoolean().notEmpty(),
+    body('discountRules').isArray().optional(),
+    body('isActive').isBoolean().optional(),
+    body('store_id').isMongoId().notEmpty()
 
   ],
   getAllValidation:() =>[

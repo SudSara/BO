@@ -8,7 +8,7 @@ module.exports = {
   ],
   updatePaymentTypesDetailValidation: () => [
     body('paymentTypeKey').isString().notEmpty(),
-    body('isActive').isBoolean().notEmpty(),
+    body('isActive').isBoolean().optional(),
     body('paymentTypeName').isString().notEmpty(),
     body('store_id').isMongoId().notEmpty()
   ],
