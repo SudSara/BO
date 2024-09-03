@@ -19,5 +19,6 @@ module.exports = {
   PAYMENTMETHODS:'paymentMethods',
   CLOCKINOUT:'clockinout',
   LOGS:'logs',
-  PAYMENTTYPES:'paymentTypes'
+  PAYMENTTYPES:'paymentTypes',
+  TILLS:'tills'
 };

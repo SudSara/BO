@@ -58,6 +58,7 @@ app.use('/accounts',require('./controller/accountcontroller'));
 app.use('/clockInOut',require('./controller/clockinoutcontroller'));
 app.use('/logs',require('./controller/logscontroller'));
 app.use('/paymentType',require('./controller/paymenttypescontroller'));
+app.use('/tills',require('./controller/tillscontroller'));
 
 
 app.use('*', (req, res) => {
