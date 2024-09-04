@@ -54,17 +54,4 @@ router.put('/:closeDay_id', validation.updateCloseDayValidation(), (req, res, ne
         });
 });
 
-router.get('/:id', validation.getAllValidation(),(req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-    closeDayBusinessLayer.getCloseDayById(req).then((data) => {
-        res.send(data)
-    })
-        .catch((err) => {
-            next(err);
-        })
-});
-
 module.exports = router;
