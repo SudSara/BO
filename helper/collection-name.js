@@ -21,6 +21,6 @@ module.exports = {
   LOGS:'logs',
   PAYMENTTYPES:'paymentTypes',
   TILLS:'tills',
-  NONCASHTRANS:'noncashTrans',
+  ONSALETRANS:'onSaleTrans',
   CLOSEDAY:'closeday'
 };

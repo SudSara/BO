@@ -59,7 +59,7 @@ app.use('/clockInOut',require('./controller/clockinoutcontroller'));
 app.use('/logs',require('./controller/logscontroller'));
 app.use('/paymentType',require('./controller/paymenttypescontroller'));
 app.use('/tills',require('./controller/tillscontroller'));
-app.use('/noncash',require('./controller/noncashtransactioncontroller'));
+app.use('/saletrans',require('./controller/saletransactioncontroller'));
 app.use('/closeday',require('./controller/closedaycontroller'));
 
 

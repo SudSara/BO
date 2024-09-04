@@ -52,6 +52,7 @@ module.exports = {
     updateUsers(userRequest) {
         let { params, body } = userRequest;
         body.updated_at = new Date();
+        body.store_id = ObjectId(body.store_id);
         let queryPayload = {
             _id: ObjectId(params.user_id)
         }

@@ -27,7 +27,7 @@ module.exports = {
         if (body.emp_id) {
             tillQueryPayload.emp_id = body.emp_id;
         }
-        if (body.status) {
+        if ('status' in body) {
             tillQueryPayload.status = body.status;
         }
         return new Promise((resolve, reject) => {
