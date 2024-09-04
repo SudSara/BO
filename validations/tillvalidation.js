@@ -38,11 +38,6 @@ module.exports = {
         body('store_id').isMongoId().notEmpty()
     ],
     getAllValidation: () => [
-        param('id').isString().notEmpty()
-    ],
-    updateCustomersDetailValidation: () => [
-      body('mail_id').isString().optional(),
-      body('phone_number').isString().optional(),
-      body('store_id').isMongoId().notEmpty()
-    ],
+        param('id').isMongoId().notEmpty()
+    ]
 };

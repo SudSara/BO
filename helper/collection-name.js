@@ -20,5 +20,7 @@ module.exports = {
   CLOCKINOUT:'clockinout',
   LOGS:'logs',
   PAYMENTTYPES:'paymentTypes',
-  TILLS:'tills'
+  TILLS:'tills',
+  NONCASHTRANS:'noncashTrans',
+  CLOSEDAY:'closeday'
 };
