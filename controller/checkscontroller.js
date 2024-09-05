@@ -22,6 +22,15 @@ router.get('/:id',(req,res,next)=>{
   })
 });
 
+router.get('/store/:store_id',(req,res,next)=>{
+  checksBusinessLayer.getAllChecks(req).then((data)=>{
+  res.send(data)
+})
+.catch((err)=>{
+  next(err);
+})
+});
+
 router.get('/filter/date',(req,res,next)=>{
     checksBusinessLayer.getCheckByDateRange(req.body).then((data)=>{
     res.send(data)

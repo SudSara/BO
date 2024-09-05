@@ -23,6 +23,28 @@ module.exports = {
             }
         })
     },
+
+    getAllChecks(payloadDetail) {
+        let { params, body } = payloadDetail;
+        let checkPayloadDetail = {};
+        if (params.store_id) {
+            checkPayloadDetail.store_id = ObjectId(params.store_id);
+        }
+        if (body.status) {
+            checkPayloadDetail.status = body.status;
+        }
+        console.log(checkPayloadDetail)
+        return new Promise((resolve, reject) => {
+            getdb(CHECKS).find(checkPayloadDetail).toArray()
+                .then((result) => {
+                    resolve({ success: true, result });
+                })
+                .catch((err) => {
+                    console.error("Error fetching all categories:", err);
+                    reject(err);
+                });
+        });
+    },
     async getCheckById(checks){
         let { params} = checks;
         queryPayload = {
