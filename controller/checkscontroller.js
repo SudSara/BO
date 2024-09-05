@@ -22,7 +22,7 @@ router.get('/:id',(req,res,next)=>{
   })
 });
 
-router.post('/getbydate',(req,res,next)=>{
+router.get('/filter/date',(req,res,next)=>{
     checksBusinessLayer.getCheckByDateRange(req.body).then((data)=>{
     res.send(data)
   })
@@ -31,7 +31,7 @@ router.post('/getbydate',(req,res,next)=>{
   })
 });
 
-router.post('/getbydate/active',(req,res,next)=>{
+router.get('/getbydate/active',(req,res,next)=>{
   checksBusinessLayer.getCheckByDateRangewithactive(req.body).then((data)=>{
     res.send(data)
   })

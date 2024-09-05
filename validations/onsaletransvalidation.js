@@ -11,7 +11,7 @@ module.exports = {
         body('startDate').isString().optional(),
         body('tillId').isString().optional(),
         body('transactionDate').isString().optional(),
-        body('onSale').isBoolean().notEmpty(),
+        body('nonSale').isBoolean().notEmpty(),
         body('store_id').isMongoId().notEmpty()
     ],
     updateTransactionValidation: () => [
@@ -24,7 +24,7 @@ module.exports = {
         body('startDate').isString().optional(),
         body('tillId').isString().optional(),
         body('transactionDate').isString().optional(),
-        body('onSale').isBoolean().notEmpty(),
+        body('nonSale').isBoolean().notEmpty(),
         body('store_id').isMongoId().notEmpty()
     ],
     getTransactionValidation: () => [

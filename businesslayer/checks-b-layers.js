@@ -75,7 +75,7 @@ module.exports = {
             
             let data = await redisClient.lRange("checks_info", 0, -1);
             let c_data = JSON.parse(`[${data}]`);
-            let res_data = c_data.filter(d=> d.store_id ==store_id && new Date(d.created_at).getTime() > new Date(start_date).getTime() && new Date(d.created_at).getTime() < new Date(end_date).getTime() )
+            let res_data = c_data.filter(d=> d.store_id == store_id && new Date(d.created_at).getTime() > new Date(start_date).getTime() && new Date(d.created_at).getTime() < new Date(end_date).getTime() )
             resolve({success:true,result:res_data})
         })
  

@@ -27,8 +27,8 @@ module.exports = {
         if (body.transactionType) {
             onSaleQueryPayload.transactionType = body.transactionType;
         }
-        if ('onSale' in body) {
-            onSaleQueryPayload.onSale = body.onSale;
+        if ('nonSale' in body) {
+            onSaleQueryPayload.nonSale = body.nonSale;
         }
         console.log(onSaleQueryPayload)
         return new Promise((resolve, reject) => {
