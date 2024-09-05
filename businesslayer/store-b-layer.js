@@ -28,6 +28,7 @@ module.exports = {
     updatestore(req){
         let {params,body} = req;
         body.updated_at = new Date();
+        body.store_id = ObjectId(body.store_id);
         return new Promise((resolve,reject)=>{
             getdb(STORES).updateOne({_id:ObjectId(params.store_id)},{$set:body},(err,result)=>{
                 if(err){
