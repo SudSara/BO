@@ -22,5 +22,6 @@ module.exports = {
   PAYMENTTYPES:'paymentTypes',
   TILLS:'tills',
   ONSALETRANS:'onSaleTrans',
-  CLOSEDAY:'closeday'
+  CLOSEDAY:'closeday',
+  GIFTCARD:'giftcard'
 };

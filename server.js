@@ -61,6 +61,7 @@ app.use('/paymentType',require('./controller/paymenttypescontroller'));
 app.use('/tills',require('./controller/tillscontroller'));
 app.use('/saletrans',require('./controller/saletransactioncontroller'));
 app.use('/closeday',require('./controller/closedaycontroller'));
+app.use('/giftcard',require('./controller/giftcardcontroller'));
 
 
 app.use('*', (req, res) => {
