@@ -1,4 +1,4 @@
-const { USER_SECURE_DATA, CHECKS } = require('../helper/collection-name');
+const { CHECKS } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const {redisClient} = require('../database/redish');
 const { ObjectId } = require('mongodb');
@@ -9,6 +9,7 @@ module.exports = {
         data.created_at = new Date();
         data.updated_at = new Date();
         data.store_id = ObjectId(data.store_id);
+        data.status = data.status.toLowerCase();
         try {
             // Publish data to Redis
             redisClient.publish("checks_data", JSON.stringify(data));
@@ -18,7 +19,7 @@ module.exports = {
                 id: data.id, // Assuming _id is used to find the existing check
                 store_id: data.store_id
             };
-            if (data.status !== "ACTIVE") {
+            if (data.status !== "active") {
                 // Check if the check exists
                 const checkExists = await new Promise((resolve, reject) => {
                     getdb(CHECKS).findOne(queryPayload, (err, document) => {
@@ -109,7 +110,7 @@ module.exports = {
             checkPayloadDetail.store_id = ObjectId(params.store_id);
         }
         if (body.status) {
-            checkPayloadDetail.status = body.status;
+            checkPayloadDetail.status = body.status.toLowerCase();
         }
         return new Promise((resolve, reject) => {
             getdb(CHECKS).find(checkPayloadDetail).toArray()
@@ -138,20 +139,13 @@ module.exports = {
     },
     
     getCheckByDateRange(body){
-        let { start_date, end_date, store_id, status } = body;
-        start_date = start_date ? parseDateFromString(start_date) : new Date();
-        end_date = end_date ? parseDateFromString(end_date) : new Date();
-        start_date.setHours(0, 0, 0, 0);
-        end_date.setHours(23, 59, 59, 999);
+        let { business_date, store_id } = body;
         
         const query = [
             {
                 $match: {
-                    business_date: {
-                        $gte: start_date,
-                        $lte: end_date,
-                    },
-                    'store_id': ObjectId(store_id)
+                    'store_id': ObjectId(store_id),
+                    'business_date': business_date
                 }
             }
         ];
@@ -166,34 +160,12 @@ module.exports = {
     },
     async getCheckByDateRangewithactive(body){
         return new Promise(async(resolve,reject)=>{ 
-            let { start_date, end_date, store_id, status } = body;
-            start_date = start_date ? parseDateFromString(start_date) : new Date();
-            end_date = end_date ? parseDateFromString(end_date) : new Date();
-            start_date.setHours(0, 0, 0, 0);
-            end_date.setHours(23, 59, 59, 999);
-            
+            let { business_date, store_id } = body;
             let data = await redisClient.lRange("checks_info", 0, -1);
             let c_data = JSON.parse(`[${data}]`);
-            let res_data = c_data.filter(d=> d.store_id == store_id && new Date(d.business_date).getTime() > new Date(start_date).getTime() && new Date(d.business_date).getTime() < new Date(end_date).getTime() )
+            let res_data = c_data.filter(d=> d.store_id == store_id && (d.business_date === business_date))
             resolve({success:true,result:res_data})
         })
- 
-        // return new Promise(async(resolve,reject)=>{
-        //     getdb(CHECKS).aggregate(query).toArray((err,result)=>{
-        //         if(err){
-        //             return reject(err);
-        //         }
-        //         return resolve({success:true,result});
-        //     });
-        // })
     }
-}
-
-function parseDateFromString(dateString) {
-    const parts = dateString.split('-');
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; 
-    const year = parseInt(parts[2], 10);
-    return new Date(year, month, day,0,0,0,0);
 }
   

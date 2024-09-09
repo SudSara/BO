@@ -13,15 +13,6 @@ router.post('/',(req, res, next) => {
     });
 });
 
-router.get('/:id',(req,res,next)=>{
-    checksBusinessLayer.getCheckById(req).then((data)=>{
-    res.send(data)
-  })
-  .catch((err)=>{
-    next(err);
-  })
-});
-
 router.get('/store/:store_id',(req,res,next)=>{
   checksBusinessLayer.getAllChecks(req).then((data)=>{
   res.send(data)
@@ -31,7 +22,7 @@ router.get('/store/:store_id',(req,res,next)=>{
 })
 });
 
-router.get('/filter/date',(req,res,next)=>{
+router.get('/getCheckByBusinessdate',(req,res,next)=>{
     checksBusinessLayer.getCheckByDateRange(req.body).then((data)=>{
     res.send(data)
   })
@@ -40,13 +31,22 @@ router.get('/filter/date',(req,res,next)=>{
   })
 });
 
-router.get('/getbydate/active',(req,res,next)=>{
+router.get('/getActiveByDate',(req,res,next)=>{
   checksBusinessLayer.getCheckByDateRangewithactive(req.body).then((data)=>{
     res.send(data)
   })
   .catch((err)=>{
     next(err);
   })
+});
+
+router.get('/:id',(req,res,next)=>{
+  checksBusinessLayer.getCheckById(req).then((data)=>{
+  res.send(data)
+})
+.catch((err)=>{
+  next(err);
+})
 });
 
 module.exports = router;
