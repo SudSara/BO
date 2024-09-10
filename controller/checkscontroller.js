@@ -14,6 +14,7 @@ router.post('/',(req, res, next) => {
 });
 
 router.get('/store/:store_id',(req,res,next)=>{
+  console.log("hai")
   checksBusinessLayer.getAllChecks(req).then((data)=>{
   res.send(data)
 })

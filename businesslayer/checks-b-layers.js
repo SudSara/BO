@@ -92,17 +92,18 @@ module.exports = {
     },
 
     getAllChecks(payloadDetail) {
-        let { params, body } = payloadDetail;
+        let { params, body, query } = payloadDetail;
         let checkPayloadDetail = {};
         if (params.store_id) {
             checkPayloadDetail.store_id = ObjectId(params.store_id);
         }
-        if (body.status) {
-            checkPayloadDetail.status = body.status.toLowerCase();
+        if (query.status) {
+            checkPayloadDetail.status = query.status.toLowerCase();
         }
-        if (body.business_date) {
-            checkPayloadDetail.business_date = body.business_date;
+        if (query.business_date) {
+            checkPayloadDetail.business_date = query.business_date;
         }
+        console.log(checkPayloadDetail)
         return new Promise((resolve, reject) => {
             getdb(CHECKS).find(checkPayloadDetail).toArray()
                 .then((result) => {
