@@ -100,10 +100,10 @@ module.exports = {
         if (query.status) {
             checkPayloadDetail.status = query.status.toLowerCase();
         }
-        if (query.business_date) {
-            checkPayloadDetail.business_date = query.business_date;
+        if (query.businessDate) {
+            checkPayloadDetail.businessDate = query.businessDate;
         }else{
-            checkPayloadDetail.business_date = formatDate(current_date)
+            checkPayloadDetail.businessDate = formatDate(current_date)
         }
 
         const pipeline = [
@@ -121,8 +121,8 @@ module.exports = {
             {
                 $group: {
                     _id: null,  // Grouping by null to get total for all documents
-                    totalAmount: { $sum: "$total" },
-                    totalCount: { $sum: 1 },  // Counting the number of documents
+                    total: { $sum: "$total" },
+                    customer: { $sum: 1 },  // Counting the number of documents
                     totalDuration: { $sum: "$duration" },  // Summing the durations
                     checks: { $push: "$$ROOT" }  // Collecting all matching documents
                 }
@@ -130,17 +130,17 @@ module.exports = {
             {
                 $project: {
                     _id: 0,
-                    totalAmount: {
-                        $concat: [{ $toString: "$totalAmount" }]
+                    total: {
+                        $concat: [{ $toString: "$total" }]
                     },
-                    averageAmount: {
+                    avg: {
                         $cond: {
-                            if: { $gt: ["$totalCount", 0] },
+                            if: { $gt: ["$customer", 0] },
                             then: {
                                 $concat: [
                                     {
                                         $toString: {
-                                            $round: [{ $divide: ["$totalAmount", "$totalCount"] }, 2]
+                                            $round: [{ $divide: ["$total", "$customer"] }, 2]
                                         }
                                     }
                                 ]
@@ -150,13 +150,13 @@ module.exports = {
                     },
                     averageDuration: {
                         $cond: {
-                            if: { $gt: ["$totalCount", 0] },
+                            if: { $gt: ["$customer", 0] },
                             then: {
                                 $concat: [
                                     {
                                         $toString: {
                                             $round: [{
-                                                $divide: ["$totalDuration", "$totalCount"]
+                                                $divide: ["$totalDuration", "$customer"]
                                             }, 0]
                                         }
                                     },
@@ -166,7 +166,7 @@ module.exports = {
                             else: '0 ms'
                         }
                     },
-                    totalCount: 1,
+                    customer: 1,
                     checks: 1
                 }
             }
@@ -178,10 +178,10 @@ module.exports = {
                     const averageDurationMs = result.length > 0 ? result[0].averageDuration : 0;
                     const averageDuration = formatDuration(averageDurationMs);
                     const response = {
-                        totalAmount: result.length > 0 ? result[0].totalAmount : '0.00',
-                        averageAmount: result.length > 0 ? result[0].averageAmount : '0.00',
+                        total: result.length > 0 ? result[0].total : '0.00',
+                        avg: result.length > 0 ? result[0].avg : '0.00',
                         averageDuration,
-                        totalCount: result.length > 0 ? result[0].totalCount : 0,
+                        customer: result.length > 0 ? result[0].customer : 0,
                         checks: result.length > 0 ? result[0].checks : []
                     };
                     resolve({ success: true, result: response});
@@ -208,12 +208,12 @@ module.exports = {
     },
 
     getCheckByDateRange(checkDetails) {
-        let { business_date, store_id } = checkDetails.query;
+        let { businessDate, store_id } = checkDetails.query;
         const query = [
             {
                 $match: {
                     'store_id': ObjectId(store_id),
-                    'business_date': business_date || formatDate(current_date)
+                    'businessDate': businessDate || formatDate(current_date)
                 }
             }
         ];
@@ -228,10 +228,10 @@ module.exports = {
     },
     async getCheckByDateRangewithactive(checkDetails) {
         return new Promise(async (resolve, reject) => {
-            let { business_date, store_id } = checkDetails.query;
+            let { businessDate, store_id } = checkDetails.query;
             let data = await redisClient.lRange("checks_info", 0, -1);
             let c_data = JSON.parse(`[${data}]`);
-            let res_data = c_data.filter(d => d.store_id == store_id && (d.business_date === (business_date || formatDate(current_date))))
+            let res_data = c_data.filter(d => d.store_id == store_id && (d.businessDate === (businessDate || formatDate(current_date))))
             resolve({ success: true, result: res_data })
         })
     }
