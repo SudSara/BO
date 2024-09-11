@@ -63,6 +63,9 @@ app.use('/saletrans',require('./controller/saletransactioncontroller'));
 app.use('/closeday',require('./controller/closedaycontroller'));
 app.use('/giftcard',require('./controller/giftcardcontroller'));
 
+//Reports
+app.use('/reports',require('./controller/salesreportcontroller'));
+
 
 app.use('*', (req, res) => {
   res.status(404).json({

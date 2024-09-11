@@ -23,5 +23,6 @@ module.exports = {
   TILLS:'tills',
   ONSALETRANS:'onSaleTrans',
   CLOSEDAY:'closeday',
-  GIFTCARD:'giftcard'
+  GIFTCARD:'giftcard',
+  SALESREPORT:'salesreport'
 };

@@ -6,7 +6,6 @@ const current_date = new Date();
 module.exports = {
     async createCheck(data) {
         // Initialize the data fields
-        data.created_at = current_date;
         data.updated_at = current_date;
         data.store_id = ObjectId(data.store_id);
         data.status = data.status.toLowerCase();
@@ -44,6 +43,7 @@ module.exports = {
                     return { success: true, data };
                 } else {
                     // Insert the new check if it does not exist
+                    data.created_at = current_date;
                     const insertResult = await new Promise((resolve, reject) => {
                         getdb(CHECKS).insertOne(data, (err, result) => {
                             if (err) {
@@ -92,7 +92,7 @@ module.exports = {
     },
 
     getAllChecks(payloadDetail) {
-        let { params, body, query } = payloadDetail;
+        let { params, query } = payloadDetail;
         let checkPayloadDetail = {};
         if (params.store_id) {
             checkPayloadDetail.store_id = ObjectId(params.store_id);
@@ -105,10 +105,86 @@ module.exports = {
         }else{
             checkPayloadDetail.business_date = formatDate(current_date)
         }
+
+        const pipeline = [
+            {
+                $match: checkPayloadDetail
+            },
+            {
+                $addFields: {
+                    // Calculate duration in milliseconds from created_at to the current time
+                    duration: {
+                        $subtract: [new Date(), "$created_at"]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,  // Grouping by null to get total for all documents
+                    totalAmount: { $sum: "$total" },
+                    totalCount: { $sum: 1 },  // Counting the number of documents
+                    totalDuration: { $sum: "$duration" },  // Summing the durations
+                    checks: { $push: "$$ROOT" }  // Collecting all matching documents
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalAmount: {
+                        $concat: [{ $toString: "$totalAmount" }]
+                    },
+                    averageAmount: {
+                        $cond: {
+                            if: { $gt: ["$totalCount", 0] },
+                            then: {
+                                $concat: [
+                                    {
+                                        $toString: {
+                                            $round: [{ $divide: ["$totalAmount", "$totalCount"] }, 2]
+                                        }
+                                    }
+                                ]
+                            },
+                            else: 'Rs.0.00'
+                        }
+                    },
+                    averageDuration: {
+                        $cond: {
+                            if: { $gt: ["$totalCount", 0] },
+                            then: {
+                                $concat: [
+                                    {
+                                        $toString: {
+                                            $round: [{
+                                                $divide: ["$totalDuration", "$totalCount"]
+                                            }, 0]
+                                        }
+                                    },
+                                    ' ms'
+                                ]
+                            },
+                            else: '0 ms'
+                        }
+                    },
+                    totalCount: 1,
+                    checks: 1
+                }
+            }
+        ];
+
         return new Promise((resolve, reject) => {
-            getdb(CHECKS).find(checkPayloadDetail).toArray()
+            getdb(CHECKS).aggregate(pipeline).toArray()
                 .then((result) => {
-                    resolve({ success: true, result });
+                    const averageDurationMs = result.length > 0 ? result[0].averageDuration : 0;
+                    const averageDuration = formatDuration(averageDurationMs);
+                    const response = {
+                        totalAmount: result.length > 0 ? result[0].totalAmount : '0.00',
+                        averageAmount: result.length > 0 ? result[0].averageAmount : '0.00',
+                        averageDuration,
+                        totalCount: result.length > 0 ? result[0].totalCount : 0,
+                        checks: result.length > 0 ? result[0].checks : []
+                    };
+                    resolve({ success: true, result: response});
                 })
                 .catch((err) => {
                     console.error("Error fetching all categories:", err);
@@ -201,6 +277,20 @@ function formatDate(date) {
     const year = date.getFullYear();
 
     return `${day}-${month}-${year}`;
+}
+// Function to format duration from milliseconds to "HH hrs MM:SS"
+function formatDuration(ms) {
+    let num = parseInt(ms);
+    const hours = Math.floor(num / 3600000); // Convert milliseconds to hours
+    const minutes = Math.floor((num % 3600000) / 60000); // Convert remaining milliseconds to minutes
+    const seconds = Math.floor((num % 60000) / 1000); // Convert remaining milliseconds to seconds
+
+    // Format hours, minutes, and seconds to always have two digits
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}`;
 }
 
 
