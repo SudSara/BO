@@ -17,9 +17,9 @@ module.exports = {
                 },
                 {
                     $addFields: {
-                        business_date: {
+                        businessDate: {
                             $dateFromString: {
-                                dateString: "$business_date",
+                                dateString: "$businessDate",
                                 format: "%d-%m-%Y"
                             }
                         }
@@ -27,7 +27,7 @@ module.exports = {
                 },
                 {
                     $project: {
-                        hour: { $hour: "$business_date" },
+                        hour: { $hour: "$businessDate" },
                         total: "$total"
                     }
                 },
@@ -64,9 +64,6 @@ module.exports = {
                         _id: 0,
                         name: "$_id",
                         amount: "$totalAmount",
-                        amountStr: {
-                            $concat: [currencyFormats.rupee, { $toString: "$totalAmount" }]
-                        }
                     }
                 },
                 {
@@ -85,15 +82,13 @@ module.exports = {
                 data: {},
                 label: []
             };
-
             hourlyResults.forEach(result => {
                 const hour = result._id;
                 const hourStr = hourLabels[hour];
                 const amount = result.totalAmount;
                 hourlySales.data[hourStr] = {
                     name: hourStr,
-                    amount: amount,
-                    amountStr: currencyFormats.rupee+`${amount}`
+                    amount: amount
                 };
                 hourlySales.label.push(hourStr);
             });
@@ -104,8 +99,7 @@ module.exports = {
             tenderResults.forEach(result => {
                 saleByTender[result.name] = {
                     name: result.name,
-                    amount: result.amount,
-                    amountStr: result.amountStr
+                    amount: result.amount
                 };
             });
     
@@ -143,17 +137,14 @@ module.exports = {
                 {
                     $group: {
                         _id: "$seats.orders.category",
-                        totalAmount: { $sum: "$seats.orders.price" }
+                        totalAmount: { $sum: "$seats.orders.total" }
                     }
                 },
                 {
                     $project: {
                         _id: 0,
                         name: "$_id",
-                        amount: "$totalAmount",
-                        amountStr: {
-                            $concat: [currencyFormats.rupee, { $toString: "$totalAmount" }]
-                        }
+                        amount: "$totalAmount"
                     }
                 }
             ];
@@ -168,7 +159,6 @@ module.exports = {
                     categorySales[result.name] = {
                         name: result.name,
                         amount: result.amount,
-                        amountStr: result.amountStr
                     };
                 }
             });
