@@ -20,9 +20,15 @@ module.exports = {
 
 function buildFilter(params) {
     const filter = { status: 'closed' };
+
     if (params.store_id) {
         filter.store_id = ObjectId(params.store_id);
     }
+
+    if (params.employees && params.employees.length > 0) {
+        filter.openEmployee = { $in: params.employees.map(empId => empId) };
+    }
+
     return filter;
 }
 
