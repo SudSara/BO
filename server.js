@@ -62,6 +62,8 @@ app.use('/tills',require('./controller/tillscontroller'));
 app.use('/saletrans',require('./controller/saletransactioncontroller'));
 app.use('/closeday',require('./controller/closedaycontroller'));
 app.use('/giftcard',require('./controller/giftcardcontroller'));
+app.use('/saleReport',require('./controller/sale-recap-report.controller'));
+
 
 //Reports
 app.use('/reports',require('./controller/salesreportcontroller'));
