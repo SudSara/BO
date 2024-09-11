@@ -24,7 +24,7 @@ router.get('/store/:store_id',(req,res,next)=>{
 });
 
 router.get('/getCheckByBusinessdate',(req,res,next)=>{
-    checksBusinessLayer.getCheckByDateRange(req.body).then((data)=>{
+    checksBusinessLayer.getCheckByDateRange(req).then((data)=>{
     res.send(data)
   })
   .catch((err)=>{
@@ -33,7 +33,7 @@ router.get('/getCheckByBusinessdate',(req,res,next)=>{
 });
 
 router.get('/getActiveByDate',(req,res,next)=>{
-  checksBusinessLayer.getCheckByDateRangewithactive(req.body).then((data)=>{
+  checksBusinessLayer.getCheckByDateRangewithactive(req).then((data)=>{
     res.send(data)
   })
   .catch((err)=>{

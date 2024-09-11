@@ -3,13 +3,13 @@ const { body ,param } = require('express-validator');
 module.exports = {
     createGiftCardValidation: () => [
     body('giftCardNumber').isString().notEmpty(),
-    body('balanceAmount').isString().optional(),
+    body('balanceAmount').isNumeric().optional(),
     body('expiryDate').isString().optional(),
     body('store_id').isMongoId().notEmpty()
   ],
   updateGiftCardDetailValidation: () => [
     body('giftCardNumber').isString().notEmpty(),
-    body('balanceAmount').isString().optional(),
+    body('balanceAmount').isNumeric().optional(),
     body('expiryDate').isString().optional(),
     body('store_id').isMongoId().notEmpty()
   ],

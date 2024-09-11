@@ -39,7 +39,7 @@ router.get('/getGiftCardDetail',(req, res, next) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
-    giftCardBusinessLayer.getGiftCardsById(req.body).then((data) => {
+    giftCardBusinessLayer.getGiftCardsById(req).then((data) => {
         res.send(data)
     })
         .catch((err) => {

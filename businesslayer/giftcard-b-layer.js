@@ -5,14 +5,14 @@ const { ObjectId } = require('mongodb');
 module.exports = {
 
     async createGiftCard(giftCard) {
+        giftCard.giftCardNumber = giftCard.giftCardNumber.replace(/\s+/g, '');
         try {
             // Set timestamps
             giftCard.store_id = ObjectId(giftCard.store_id);
-    
             // Check if a gift card with the same number already exists for the same store
             const existingGiftCard = await new Promise((resolve, reject) => {
                 getdb(GIFTCARD).findOne({
-                    giftCardNumber: giftCard.giftCardNumber,
+                    giftCardNumber: giftCard.giftCardNumber.replace(/\s+/g, ''),
                     store_id: giftCard.store_id
                 }, (err, existingGiftCard) => {
                     if (err) {
@@ -79,12 +79,13 @@ module.exports = {
     },
 
     getGiftCardsById(data) {
+        let {giftCardNumber, store_id } = data.query
         return new Promise((resolve, reject) => {
             let query = [
                 {
                     '$match': {
-                        'giftCardNumber': data.giftCardNumber,
-                        'store_id' : ObjectId(data.store_id)
+                        'giftCardNumber': giftCardNumber.replace(/\s+/g, ''),
+                        'store_id' : ObjectId(store_id)
                     }
                 }
             ]

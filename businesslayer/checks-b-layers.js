@@ -2,12 +2,12 @@ const { CHECKS } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { redisClient } = require('../database/redish');
 const { ObjectId } = require('mongodb');
-
+const current_date = new Date();
 module.exports = {
     async createCheck(data) {
         // Initialize the data fields
-        data.created_at = new Date();
-        data.updated_at = new Date();
+        data.created_at = current_date;
+        data.updated_at = current_date;
         data.store_id = ObjectId(data.store_id);
         data.status = data.status.toLowerCase();
         try {
@@ -102,8 +102,9 @@ module.exports = {
         }
         if (query.business_date) {
             checkPayloadDetail.business_date = query.business_date;
+        }else{
+            checkPayloadDetail.business_date = formatDate(current_date)
         }
-        console.log(checkPayloadDetail)
         return new Promise((resolve, reject) => {
             getdb(CHECKS).find(checkPayloadDetail).toArray()
                 .then((result) => {
@@ -130,14 +131,13 @@ module.exports = {
         })
     },
 
-    getCheckByDateRange(body) {
-        let { business_date, store_id } = body;
-
+    getCheckByDateRange(checkDetails) {
+        let { business_date, store_id } = checkDetails.query;
         const query = [
             {
                 $match: {
                     'store_id': ObjectId(store_id),
-                    'business_date': business_date
+                    'business_date': business_date || formatDate(current_date)
                 }
             }
         ];
@@ -150,12 +150,12 @@ module.exports = {
             });
         })
     },
-    async getCheckByDateRangewithactive(body) {
+    async getCheckByDateRangewithactive(checkDetails) {
         return new Promise(async (resolve, reject) => {
-            let { business_date, store_id } = body;
+            let { business_date, store_id } = checkDetails.query;
             let data = await redisClient.lRange("checks_info", 0, -1);
             let c_data = JSON.parse(`[${data}]`);
-            let res_data = c_data.filter(d => d.store_id == store_id && (d.business_date === business_date))
+            let res_data = c_data.filter(d => d.store_id == store_id && (d.business_date === (business_date || formatDate(current_date))))
             resolve({ success: true, result: res_data })
         })
     }
@@ -193,6 +193,14 @@ async function redisUpdate(isDelete, data) {
     } catch (error) {
         console.error('Error updating the list:', error);
     }
+}
+
+function formatDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth() returns month from 0-11
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
 }
 
 
