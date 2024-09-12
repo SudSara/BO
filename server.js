@@ -59,14 +59,15 @@ app.use('/clockInOut',require('./controller/clockinoutcontroller'));
 app.use('/logs',require('./controller/logscontroller'));
 app.use('/paymentType',require('./controller/paymenttypescontroller'));
 app.use('/tills',require('./controller/tillscontroller'));
-app.use('/saletrans',require('./controller/saletransactioncontroller'));
+app.use('/saletrans',require('./controller/non-sale-transaction.controller'));
 app.use('/closeday',require('./controller/closedaycontroller'));
 app.use('/giftcard',require('./controller/giftcardcontroller'));
-app.use('/saleReport',require('./controller/sale-recap-report.controller'));
 
 
 //Reports
-app.use('/reports',require('./controller/salesreportcontroller'));
+app.use('/saleReport',require('./controller/reports/sale-recap-report.controller'));
+app.use('/reports',require('./controller/reports/sales-dashboard-report-controller'));
+app.use('/transactionReport',require('./controller/reports/transaction-report.controller'));
 
 
 app.use('*', (req, res) => {
