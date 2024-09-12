@@ -2,215 +2,100 @@ const { CHECKS } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 const moment = require('moment');
-const { hourLabels,currencyFormats } = require('../helper/constants');
+const { hourLabels } = require('../helper/constants');
+
 module.exports = {
     async getSaleReport(requestDetails) {
-        let { dateFilter, store_id } = requestDetails.query
+        const { dateFilter, store_id } = requestDetails.query;
+
         try {
-            const filter = dateQuery(dateFilter)
-            const hourlyPipeline = [
-                {
-                    $match: {
-                        store_id: ObjectId(store_id),
-                        created_at: filter
-                    }
-                },
-                {
-                    $addFields: {
-                        businessDate: {
-                            $dateFromString: {
-                                dateString: "$businessDate",
-                                format: "%d-%m-%Y"
-                            }
-                        }
-                    }
-                },
-                {
-                    $project: {
-                        hour: { $hour: "$businessDate" },
-                        total: "$total"
-                    }
-                },
-                {
-                    $group: {
-                        _id: "$hour",
-                        totalAmount: { $sum: "$total" }
-                    }
-                },
-                {
-                    $sort: { "_id": 1 } // Sort by hour
-                }
+            const filter = dateQuery(dateFilter);
+
+            const pipeline = [
+                { $match: { store_id: ObjectId(store_id), created_at: filter } },
+                { $facet: {
+                    hourlySales: [
+                        { $addFields: { hour: { $hour: "$created_at" } } },
+                        { $group: { _id: "$hour", totalAmount: { $sum: "$paidAmount" } } },
+                        { $sort: { "_id": 1 } }
+                    ],
+                    tenderSales: [
+                        { $unwind: "$payments" },
+                        { $group: { _id: "$payments.paymentType", totalAmount: { $sum: "$payments.authorizedAmount" } } },
+                        { $project: { _id: 0, name: "$_id", amount: "$totalAmount" } },
+                        { $sort: { name: 1 } }
+                    ]
+                }}
             ];
 
-            // Aggregation pipeline for sales by tender
-            const tenderPipeline = [
-                {
-                    $match: {
-                        store_id: ObjectId(store_id),
-                        created_at: filter
-                    }
-                },
-                {
-                    $unwind: "$payments"
-                },
-                {
-                    $group: {
-                        _id: "$payments.paymentType",
-                        totalAmount: { $sum: "$payments.authorizedAmount" }
-                    }
-                },
-                {
-                    $project: {
-                        _id: 0,
-                        name: "$_id",
-                        amount: "$totalAmount",
-                    }
-                },
-                {
-                    $sort: { name: 1 } // Sort by payment type
-                }
-            ];
+            const [result] = await getdb(CHECKS).aggregate(pipeline).toArray();
+            const { hourlySales, tenderSales } = result;
 
-            
-            // Assuming `getdb` returns a MongoDB collection
-            const [hourlyResults, tenderResults] = await Promise.all([
-            getdb(CHECKS).aggregate(hourlyPipeline).toArray(),
-            getdb(CHECKS).aggregate(tenderPipeline).toArray()
-        ]);
-            
-            const hourlySales = {
+
+            const hourlySalesData = {
                 data: {},
                 label: []
             };
-            hourlyResults.forEach(result => {
-                const hour = result._id;
-                const hourStr = hourLabels[hour];
-                const amount = result.totalAmount;
-                hourlySales.data[hourStr] = {
-                    name: hourStr,
-                    amount: amount
-                };
-                hourlySales.label.push(hourStr);
+
+            hourLabels.forEach((label, index) => {
+                hourlySalesData.data[label] = { name: label, amount: 0 };
+                hourlySalesData.label.push(label);
             });
 
-            // Format sale by tender results
-            const saleByTender = {};
-
-            tenderResults.forEach(result => {
-                saleByTender[result.name] = {
-                    name: result.name,
-                    amount: result.amount
-                };
+            hourlySales.forEach(result => {
+                const hourStr = hourLabels[result._id] || `${result._id}:00 - ${result._id + 1}:00`;
+                hourlySalesData.data[hourStr].amount = result.totalAmount;
             });
-    
-            // Ensure labels are sorted correctly
-            hourlySales.label.sort((a, b) => hourLabels.indexOf(a) - hourLabels.indexOf(b));
+
+            hourlySalesData.label.sort((a, b) => {
+                const aIndex = hourLabels.indexOf(a.split(' ')[0]);
+                const bIndex = hourLabels.indexOf(b.split(' ')[0]);
+                return aIndex - bIndex;
+            });
+
+            const saleByTender = tenderSales.reduce((acc, result) => {
+                acc[result.name] = { name: result.name, amount: result.amount };
+                return acc;
+            }, {});
+
             return {
                 success: true,
                 result: {
-                    salesReport: hourlySales,
+                    salesReport: hourlySalesData,
                     saleByTender: saleByTender
                 }
             };
         } catch (err) {
             return { success: false, error: err.message };
         }
-    },
-    async getCategoryReport(requestDetails) {
-        let { dateFilter, store_id } = requestDetails.query
-        try {
-            const filter = dateQuery(dateFilter)
-            
-            const categoryPipeline = [
-                {
-                    $match: {
-                        store_id: ObjectId(store_id),
-                        created_at: filter
-                    }
-                },
-                {
-                    $unwind: "$seats"
-                },
-                {
-                    $unwind: "$seats.orders"
-                },
-                {
-                    $group: {
-                        _id: "$seats.orders.category",
-                        totalAmount: { $sum: "$seats.orders.total" }
-                    }
-                },
-                {
-                    $project: {
-                        _id: 0,
-                        name: "$_id",
-                        amount: "$totalAmount"
-                    }
-                }
-            ];
-            
-            // Execute the aggregation pipeline
-            const categoryResults = await getdb(CHECKS).aggregate(categoryPipeline).toArray();
-    
-            // Format the result
-            const categorySales = {};
-            categoryResults.forEach(result => {
-                if(result.name){
-                    categorySales[result.name] = {
-                        name: result.name,
-                        amount: result.amount,
-                    };
-                }
-            });
-    
-            return {
-                success: true,
-                result: {
-                    categorySales: categorySales
-                }
-            };
-        } catch (err) {
-            return { success: false, error: err.message };
-        }
     }
-}
+};
 
-
-function dateQuery(dateFilter){
-    let dateRange = {};
+function dateQuery(dateFilter) {
+    let startDate, endDate;
     switch (dateFilter) {
         case 'T': // Today
-            dateRange = {
-                $gte: moment().startOf('day').toDate(),
-                $lt: moment().endOf('day').toDate()
-            };
+            startDate = moment().startOf('day').toDate();
+            endDate = moment().endOf('day').toDate();
             break;
         case 'Y': // Yesterday
-            dateRange = {
-                $gte: moment().subtract(1, 'day').startOf('day').toDate(),
-                $lt: moment().subtract(1, 'day').endOf('day').toDate()
-            };
+            startDate = moment().subtract(1, 'day').startOf('day').toDate();
+            endDate = moment().subtract(1, 'day').endOf('day').toDate();
             break;
         case 'LSW': // Last Week
-            dateRange = {
-                $gte: moment().subtract(1, 'week').startOf('week').toDate(),
-                $lt: moment().startOf('week').toDate()
-            };
+            startDate = moment().subtract(1, 'week').startOf('week').toDate();
+            endDate = moment().startOf('week').toDate();
             break;
         case 'W': // This Week
-            dateRange = {
-                $gte: moment().startOf('week').toDate(),
-                $lt: moment().endOf('week').toDate()
-            };
+            startDate = moment().startOf('week').toDate();
+            endDate = moment().endOf('week').toDate();
             break;
         case 'L7D': // Last Seven Days
-            dateRange = {
-                $gte: moment().subtract(7, 'days').startOf('day').toDate(),
-                $lt: moment().startOf('day').toDate()
-            };
+            startDate = moment().subtract(7, 'days').startOf('day').toDate();
+            endDate = moment().startOf('day').toDate();
             break;
         default:
             throw new Error('Invalid date filter');
     }
-    return dateRange;
+    return { $gte: startDate, $lt: endDate };
 }
