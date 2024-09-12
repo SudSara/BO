@@ -176,7 +176,7 @@ module.exports = {
                         let ex_l_data = u_s_data.find(d => d.device_id == req.body.device_id);
 
                         if(logged_user.length >= account_data?.stores_count && ex_l_data?.logged_in != true){
-                            return resolve({success:false,message:'store login limit excited'})
+                            return resolve({success:false,message:'store login limit exceeded'})
                         }
                         if(ex_l_data?.logged_in){
                             license_no = ex_l_data.license_no;
