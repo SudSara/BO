@@ -73,6 +73,17 @@ module.exports = {
                 return resolve({ success: true, result });
             });
         })
+    },
+
+    getTillsForSaleRecap(tillPipeLine) {
+        return new Promise((resolve, reject) => {
+            getdb(TILLS).aggregate(tillPipeLine).toArray((err,result) => {
+                    if(err){
+                        reject(err)
+                    }
+                    resolve({success:true,result})
+                })
+        });
     }
 
 }

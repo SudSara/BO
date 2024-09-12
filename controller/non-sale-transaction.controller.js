@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { validationResult } = require('express-validator');
-const validation = require('../validations/onsaletransvalidation');
-const nonCashTransBusinessLayer = require('../businesslayer/saletransaction-b-layer');
+const validation = require('../validations/non-sale-transaction.validation');
+const nonCashTransBusinessLayer = require('../businesslayer/non-sale-transaction-b-layer');
 
 router.post('/', validation.createTransactionValidation(), (req, res, next) => {
     const errors = validationResult(req);
