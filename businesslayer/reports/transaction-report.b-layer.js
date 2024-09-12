@@ -9,7 +9,6 @@ module.exports = {
 
     const closedDate = dateQuery(saleClosedDate);
     const transactionDateFilter = dateQuery(transactionDate);
-    console.log('transactionDate', transactionDate);
 
     try {
       const pipeline = [
@@ -27,15 +26,29 @@ module.exports = {
           $match: {
             ...(paymentType && { "payments.paymentType": paymentType }),
             ...(paymentName && { "payments.paymentName": paymentName }),
-            ...(transactionDateFilter && { "payments.transactionDate": transactionDateFilter }), // Optional filter for transactionDate
-          },
+            ...(transactionDateFilter && { "payments.transactionDate": transactionDateFilter })
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            payments: {
+              $mergeObjects: [
+                "$payments",
+                {
+                  checkNo: "$checkNo",
+                  checkId: "$id"
+                }
+              ]
+            }
+          }
         },
         {
           $group: {
-            _id: null, // No specific grouping needed
-            payments: { $push: "$payments" }, // Collect all matching payments into an array
-          },
-        },
+            _id: null,
+            payments: { $push: "$payments" },
+          }
+        }
       ];
 
       const [result] = await getdb(CHECKS).aggregate(pipeline).toArray();
@@ -43,7 +56,7 @@ module.exports = {
       return {
         success: true,
         result: {
-          payments: result ? result.payments : [], // Return payments if found, else return an empty array
+          payments: result ? result.payments : [],
         },
       };
     } catch (err) {
