@@ -7,13 +7,20 @@ module.exports = {
         try {
             const pipeline = createAggregationPipeline(params);
             const [result] = await getdb(CHECKS).aggregate(pipeline).toArray();
+
+            const reportResult = await Promise.all([
+                formatSalesRecap(result.salesRecap),
+                formatPaymentSummary(result.paymentSummary),
+                formatDiscountSummary(result.discountSummary),
+                formatTaxSummary(result),
+            ]);
+
             return {
                 success: true,
-                result: formatReportResults(result)
+                result: Object.assign({}, ...reportResult)
             };
         } catch (err) {
-            console.error("Error generating sales recap report:", err);
-            return { success: false, message: 'Error generating report', error: err.message };
+            return { success: false, message: 'Not Found', error: err?.message };
         }
     }
 };
@@ -21,55 +28,78 @@ module.exports = {
 function buildFilter(params) {
     const filter = { status: 'closed' };
 
-    if (params.store_id) {
-        filter.store_id = ObjectId(params.store_id);
-    }
-
-    if (params.employees && params.employees.length > 0) {
-        filter.openEmployee = { $in: params.employees.map(empId => empId) };
+    if (params.store_id) filter.store_id = ObjectId(params.store_id);
+    if (params.businessDate) filter.businessDate = params.businessDate;
+    if (params.employees?.length) {
+        filter.openEmployee = { $in: params.employees };
     }
 
     return filter;
 }
 
 function createAggregationPipeline(params) {
+    const filter = buildFilter(params);
+
     return [
-        { $match: buildFilter(params) },
-        { $project: {
-            payments: 1,
-            seats: 1
-        }},
-        { $facet: {
-            salesRecap: [{ $group: groupFields() }],
-            paymentSummary: paymentSummaryPipeline(),
-            taxSummary: taxSummaryPipeline(),
-            discountSummary: discountSummaryPipeline()
-        }}
+        { $match: filter },
+        {
+            $facet: {
+                salesRecap: [{ $group: groupFields() }],
+                paymentSummary: paymentSummaryPipeline(),
+                taxSummary: taxSummaryPipeline(),
+                discountSummary: discountSummaryPipeline(),
+                checkTaxSummary: checkTaxSummaryPipeline()
+            }
+        }
     ];
 }
 
 function groupFields() {
     return {
         _id: null,
-        sale: { $sum: '$total' },
         tax: { $sum: '$tax' },
         discount: { $sum: '$discount' },
-        paid: { $sum: '$paidAmount' }
+        paid: { $sum: '$paidAmount' },
+        gross: { $sum: '$total' },
+        netSale: { $sum: '$subTotal' }
     };
 }
 
 function paymentSummaryPipeline() {
     return [
         { $unwind: '$payments' },
-        { $group: {
-            _id: '$payments.paymentType',
-            totalAuthorizedAmount: { $sum: '$payments.authorizedAmount' }
-        }},
-        { $project: {
-            _id: 0,
-            paymentType: '$_id',
-            totalAuthorizedAmount: 1
-        }}
+        {
+            $group: {
+                _id: '$payments.paymentType',
+                totalAuthorizedAmount: { $sum: '$payments.authorizedAmount' }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                paymentType: '$_id',
+                totalAuthorizedAmount: 1
+            }
+        }
+    ];
+}
+
+function checkTaxSummaryPipeline() {
+    return [
+        { $unwind: '$taxes' },
+        {
+            $group: {
+                _id: '$taxes.name',
+                totalAuthorizedAmount: { $sum: '$taxes.amount' }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                name: '$_id',
+                totalAuthorizedAmount: 1
+            }
+        }
     ];
 }
 
@@ -78,15 +108,19 @@ function taxSummaryPipeline() {
         { $unwind: '$seats' },
         { $unwind: '$seats.orders' },
         { $unwind: '$seats.orders.allTaxes' },
-        { $group: {
-            _id: '$seats.orders.allTaxes.name',
-            totalAmount: { $sum: '$seats.orders.allTaxes.amount' }
-        }},
-        { $project: {
-            _id: 0,
-            taxName: '$_id',
-            totalAmount: 1
-        }}
+        {
+            $group: {
+                _id: '$seats.orders.allTaxes.name',
+                totalAmount: { $sum: '$seats.orders.allTaxes.amount' }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                taxName: '$_id',
+                totalAmount: 1
+            }
+        }
     ];
 }
 
@@ -95,57 +129,64 @@ function discountSummaryPipeline() {
         { $unwind: '$seats' },
         { $unwind: '$seats.orders' },
         { $unwind: '$seats.orders.discounts' },
-        { $group: {
-            _id: '$seats.orders.discounts.discount.name',
-            totalAmount: { $sum: '$seats.orders.discounts.amount' }
-        }},
-        { $project: {
-            _id: 0,
-            discountName: '$_id',
-            totalAmount: 1
-        }}
+        {
+            $group: {
+                _id: '$seats.orders.discounts.discount.name',
+                totalAmount: { $sum: '$seats.orders.discounts.amount' }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                discountName: '$_id',
+                totalAmount: 1
+            }
+        }
     ];
 }
 
-function formatReportResults(result) {
-    const salesRecapReport = formatSalesRecap(result.salesRecap);
-    const paymentSummary = formatPaymentSummary(result.paymentSummary);
-    const taxSummary = formatTaxSummary(result.taxSummary);
-    const discountSummary = formatDiscountSummary(result.discountSummary);
-
+// Formatting the report results
+async function formatSalesRecap(data) {
+    const result = data[0] || {};
     return {
-        paymentSummary,
-        taxSummary,
-        discountSummary,
-        ...salesRecapReport
+        tax: result.tax || 0,
+        discount: result.discount || 0,
+        paid: result.paid || 0,
+        gross: result.gross || 0,
+        netSale: result.netSale || 0,
     };
 }
 
-function formatSalesRecap(data) {
-    if (data.length === 0) {
-        return { sale: 0, tax: 0, discount: 0, paid: 0 };
-    }
-    const { sale, tax, discount, paid } = data[0];
-    return { sale, tax, discount, paid };
+async function formatPaymentSummary(paymentData) {
+    return {
+        paymentSummary: paymentData.reduce((summary, item) => {
+            summary[item.paymentType] = item.totalAuthorizedAmount;
+            return summary;
+        }, {})
+    };
 }
 
-function formatPaymentSummary(paymentData) {
-    return paymentData.reduce((summary, item) => {
-        summary[item.paymentType] = item.totalAuthorizedAmount;
-        return summary;
-    }, {});
-}
-
-function formatTaxSummary(taxData) {
-    return taxData.reduce((summary, item) => {
+async function formatTaxSummary(data) {
+    const taxSummary = data.taxSummary.reduce((summary, item) => {
         summary[item.taxName] = item.totalAmount;
         return summary;
     }, {});
-}
 
-function formatDiscountSummary(discountsArray) {
-    return discountsArray.reduce((summary, item) => {
-        summary[item.discountName] = (summary[item.discountName] || 0) + item.totalAmount;
+    const checkTaxSummary = data.checkTaxSummary.reduce((summary, item) => {
+        summary[item.name] = item.totalAuthorizedAmount;
         return summary;
     }, {});
+
+    return {
+        taxSummary: { ...taxSummary, ...checkTaxSummary }
+    };
+}
+
+async function formatDiscountSummary(discountsArray) {
+    return {
+        discountSummary: discountsArray.reduce((summary, item) => {
+            summary[item.discountName] = (summary[item.discountName] || 0) + item.totalAmount;
+            return summary;
+        }, {})
+    };
 }
