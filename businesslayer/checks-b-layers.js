@@ -111,14 +111,6 @@ module.exports = {
                 $match: checkPayloadDetail
             },
             {
-                $addFields: {
-                    // Calculate duration in milliseconds from created_at to the current time
-                    duration: {
-                        $subtract: [new Date(), "$created_at"]
-                    }
-                }
-            },
-            {
                 $group: {
                     _id: null,  // Grouping by null to get total for all documents
                     total: { $sum: "$total" },
