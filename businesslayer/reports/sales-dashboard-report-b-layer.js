@@ -3,6 +3,7 @@ const getdb = require("../../database/db").getDb;
 const { ObjectId } = require("mongodb");
 const moment = require("moment");
 const { hourLabels } = require("../../helper/constants");
+const categoryBusinessLayer = require('../category-b-layer');
 
 module.exports = {
   async getSaleReport(requestDetails) {
@@ -13,6 +14,12 @@ module.exports = {
     try {
       const pipeline = createSalePipeline(storeObjectId, filter);
       const [result] = await getdb(CHECKS).aggregate(pipeline).toArray();
+      const allCategories = await categoryBusinessLayer.getAllCategory({ store_id });
+
+      if (!result) {
+        throw new Error('No data found');
+      }
+
       const {
         hourlySales, tenderSales, salesReport, categorySales
       } = result;
@@ -23,7 +30,7 @@ module.exports = {
           salesReport: formatSalesReport(salesReport),
           hourlySales: formatHourlySales(hourlySales),
           saleByTender: formatSalesByTender(tenderSales),
-          salesByCategories: formatSalesByCategories(categorySales),
+          salesByCategories: formatSalesByCategories(categorySales, allCategories.result),
         },
       };
     } catch (err) {
@@ -40,11 +47,12 @@ module.exports = {
     try {
       const categoryPipeline = createCategoryPipeline(storeObjectId, filter);
       const categoryResults = await getdb(CHECKS).aggregate(categoryPipeline).toArray();
+      const allCategories = await categoryBusinessLayer.getAllCategory({ store_id });
 
       return {
         success: true,
         result: {
-          categorySales: formatCategorySales(categoryResults),
+          categorySales: formatCategorySales(categoryResults, allCategories.result),
         },
       };
     } catch (err) {
@@ -96,9 +104,7 @@ function createCategoryPipeline(storeObjectId, filter) {
 }
 
 function formatSalesReport(salesReport) {
-  return salesReport.length > 0
-    ? salesReport[0]
-    : { tax: 0, discount: 0, paid: 0, gross: 0, netSale: 0 };
+  return salesReport?.[0] || { tax: 0, discount: 0, paid: 0, gross: 0, netSale: 0 };
 }
 
 function formatHourlySales(hourlySales) {
@@ -107,34 +113,37 @@ function formatHourlySales(hourlySales) {
     const hourStr = hourLabels[_id] || `${_id}:00 - ${_id + 1}:00`;
     data[hourStr] = totalAmount;
   });
-
   return { data, label: hourLabels };
 }
 
 function formatSalesByTender(tenderSales) {
-  const labels = tenderSales.map(({ name }) => name);
-  const data = tenderSales.reduce((acc, { name, amount }) => {
-    acc[name] = amount;
+  return {
+    labels: tenderSales.map(({ name }) => name),
+    data: tenderSales.reduce((acc, { name, amount }) => {
+      acc[name] = amount;
+      return acc;
+    }, {}),
+  };
+}
+
+function formatSalesByCategories(categorySales, allCategories) {
+  const { labels, data } = categorySales.reduce((acc, { name, amount }) => {
+    const category = allCategories.find(res => res._id.toString() === name.toString());
+    if (category) {
+      acc.labels.push(category.name);
+      acc.data[category.name] = amount;
+    }
     return acc;
-  }, {});
+  }, { labels: [], data: {} });
 
   return { labels, data };
 }
 
-function formatSalesByCategories(categorySales) {
-  const labels = categorySales.map(({ name }) => name);
-  const data = categorySales.reduce((acc, { name, amount }) => {
-    acc[name] = amount;
-    return acc;
-  }, {});
-
-  return { labels, data };
-}
-
-function formatCategorySales(categoryResults) {
-  return categoryResults.reduce((acc, result) => {
-    if (result.name) {
-      acc[result.name] = { name: result.name, amount: result.amount };
+function formatCategorySales(categoryResults, allCategories) {
+  return categoryResults.reduce((acc, { name, amount }) => {
+    const category = allCategories.find(res => res._id.toString() === name.toString());
+    if (category) {
+      acc[category.name] = { name: category.name, amount };
     }
     return acc;
   }, {});
@@ -162,11 +171,11 @@ function dateQuery(dateFilter) {
       break;
     case "Y": // Yesterday
       startDate = now.subtract(1, "day").startOf("day").toDate();
-      endDate = now.subtract(1, "day").endOf("day").toDate();
+      endDate = now.endOf("day").toDate();
       break;
     case "LSW": // Last Week
       startDate = now.subtract(1, "week").startOf("week").toDate();
-      endDate = now.startOf("week").toDate();
+      endDate = now.endOf("week").toDate();
       break;
     case "W": // This Week
       startDate = now.startOf("week").toDate();
@@ -174,10 +183,11 @@ function dateQuery(dateFilter) {
       break;
     case "L7D": // Last Seven Days
       startDate = now.subtract(7, "days").startOf("day").toDate();
-      endDate = now.startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
       break;
     default:
       throw new Error("Invalid date filter");
   }
+
   return { $gte: startDate, $lt: endDate };
 }
