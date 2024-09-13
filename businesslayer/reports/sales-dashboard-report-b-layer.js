@@ -7,91 +7,138 @@ const { hourLabels } = require("../../helper/constants");
 module.exports = {
   async getSaleReport(requestDetails) {
     const { dateFilter, store_id } = requestDetails.query;
+    const storeObjectId = ObjectId(store_id);
+    const filter = dateQuery(dateFilter);
 
     try {
-      const filter = dateQuery(dateFilter);
-      const pipeline = [
-        { $match: { store_id: ObjectId(store_id), created_at: filter } },
-        {
-          $facet: {
-            salesReport: [{ $group: groupFields() }],
-            hourlySales: [
-              { $addFields: { hour: { $hour: "$created_at" } } },
-              {
-                $group: { _id: "$hour", totalAmount: { $sum: "$paidAmount" } },
-              },
-              { $sort: { _id: 1 } },
-            ],
-            tenderSales: [
-              { $unwind: "$payments" },
-              {
-                $group: {
-                  _id: "$payments.paymentType",
-                  totalAmount: { $sum: "$payments.authorizedAmount" },
-                },
-              },
-              { $project: { _id: 0, name: "$_id", amount: "$totalAmount" } },
-              { $sort: { name: 1 } },
-            ],
-          },
-        },
-      ];
-
+      const pipeline = createSalePipeline(storeObjectId, filter);
       const [result] = await getdb(CHECKS).aggregate(pipeline).toArray();
-      const { hourlySales, tenderSales, salesReport } = result;
-
-      const salesReportData =
-        salesReport.length > 0
-          ? salesReport[0]
-          : {
-              tax: 0,
-              discount: 0,
-              paid: 0,
-              gross: 0,
-              netSale: 0,
-            };
-
-      const hourlySalesData = {
-        data: {},
-        label: [...hourLabels],
-      };
-
-      hourLabels.forEach((label) => {
-        hourlySalesData.data[label] = { name: label, amount: 0 };
-      });
-
-      hourlySales.forEach((result) => {
-        const hourStr =
-          hourLabels[result._id] || `${result._id}:00 - ${result._id + 1}:00`;
-        if (hourlySalesData.data[hourStr]) {
-          hourlySalesData.data[hourStr].amount = result.totalAmount;
-        }
-      });
-
-      const saleByTender = tenderSales.reduce((acc, result) => {
-        acc[result.name] = { name: result.name, amount: result.amount };
-        return acc;
-      }, {});
+      const {
+        hourlySales, tenderSales, salesReport, categorySales
+      } = result;
 
       return {
         success: true,
         result: {
-          salesReport: {
-            tax: salesReportData.tax,
-            discount: salesReportData.discount,
-            paid: salesReportData.paid,
-            gross: salesReportData.gross,
-            netSale: salesReportData.netSale,
-          },
-          hourlySales: hourlySalesData,
-          saleByTender: saleByTender,
+          salesReport: formatSalesReport(salesReport),
+          hourlySales: formatHourlySales(hourlySales),
+          saleByTender: formatSalesByTender(tenderSales),
+          salesByCategories: formatSalesByCategories(categorySales),
         },
       };
     } catch (err) {
+      console.error(`Error in getSaleReport: ${err.message}`);
       return { success: false, error: err.message };
     }
   },
+
+  async getCategoryReport(requestDetails) {
+    const { dateFilter, store_id } = requestDetails.query;
+    const storeObjectId = ObjectId(store_id);
+    const filter = dateQuery(dateFilter);
+
+    try {
+      const categoryPipeline = createCategoryPipeline(storeObjectId, filter);
+      const categoryResults = await getdb(CHECKS).aggregate(categoryPipeline).toArray();
+
+      return {
+        success: true,
+        result: {
+          categorySales: formatCategorySales(categoryResults),
+        },
+      };
+    } catch (err) {
+      console.error(`Error in getCategoryReport: ${err.message}`);
+      return { success: false, error: `Error generating report: ${err.message}` };
+    }
+  },
 };
+
+// Helper Functions
+function createSalePipeline(storeObjectId, filter) {
+  return [
+    { $match: { store_id: storeObjectId, created_at: filter } },
+    {
+      $facet: {
+        salesReport: [{ $group: groupFields() }],
+        hourlySales: [
+          { $addFields: { hour: { $hour: "$created_at" } } },
+          { $group: { _id: "$hour", totalAmount: { $sum: "$paidAmount" } } },
+          { $sort: { _id: 1 } },
+        ],
+        tenderSales: [
+          { $unwind: "$payments" },
+          { $group: { _id: "$payments.paymentType", totalAmount: { $sum: "$payments.authorizedAmount" } } },
+          { $project: { _id: 0, name: "$_id", amount: "$totalAmount" } },
+          { $sort: { name: 1 } },
+        ],
+        categorySales: [
+          { $unwind: "$seats" },
+          { $unwind: "$seats.orders" },
+          { $group: { _id: "$seats.orders.category", totalAmount: { $sum: "$seats.orders.total" } } },
+          { $project: { _id: 0, name: "$_id", amount: "$totalAmount" } },
+          { $sort: { name: 1 } },
+        ],
+      },
+    },
+  ];
+}
+
+function createCategoryPipeline(storeObjectId, filter) {
+  return [
+    { $match: { store_id: storeObjectId, created_at: filter } },
+    { $unwind: "$seats" },
+    { $unwind: "$seats.orders" },
+    { $group: { _id: "$seats.orders.category", totalAmount: { $sum: "$seats.orders.total" } } },
+    { $project: { _id: 0, name: "$_id", amount: "$totalAmount" } },
+    { $sort: { name: 1 } },
+  ];
+}
+
+function formatSalesReport(salesReport) {
+  return salesReport.length > 0
+    ? salesReport[0]
+    : { tax: 0, discount: 0, paid: 0, gross: 0, netSale: 0 };
+}
+
+function formatHourlySales(hourlySales) {
+  const data = hourLabels.reduce((acc, label) => ({ ...acc, [label]: 0 }), {});
+  hourlySales.forEach(({ _id, totalAmount }) => {
+    const hourStr = hourLabels[_id] || `${_id}:00 - ${_id + 1}:00`;
+    data[hourStr] = totalAmount;
+  });
+
+  return { data, label: hourLabels };
+}
+
+function formatSalesByTender(tenderSales) {
+  const labels = tenderSales.map(({ name }) => name);
+  const data = tenderSales.reduce((acc, { name, amount }) => {
+    acc[name] = amount;
+    return acc;
+  }, {});
+
+  return { labels, data };
+}
+
+function formatSalesByCategories(categorySales) {
+  const labels = categorySales.map(({ name }) => name);
+  const data = categorySales.reduce((acc, { name, amount }) => {
+    acc[name] = amount;
+    return acc;
+  }, {});
+
+  return { labels, data };
+}
+
+function formatCategorySales(categoryResults) {
+  return categoryResults.reduce((acc, result) => {
+    if (result.name) {
+      acc[result.name] = { name: result.name, amount: result.amount };
+    }
+    return acc;
+  }, {});
+}
 
 function groupFields() {
   return {
@@ -105,27 +152,29 @@ function groupFields() {
 }
 
 function dateQuery(dateFilter) {
+  const now = moment();
   let startDate, endDate;
+
   switch (dateFilter) {
     case "T": // Today
-      startDate = moment().startOf("day").toDate();
-      endDate = moment().endOf("day").toDate();
+      startDate = now.startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
       break;
     case "Y": // Yesterday
-      startDate = moment().subtract(1, "day").startOf("day").toDate();
-      endDate = moment().subtract(1, "day").endOf("day").toDate();
+      startDate = now.subtract(1, "day").startOf("day").toDate();
+      endDate = now.subtract(1, "day").endOf("day").toDate();
       break;
     case "LSW": // Last Week
-      startDate = moment().subtract(1, "week").startOf("week").toDate();
-      endDate = moment().startOf("week").toDate();
+      startDate = now.subtract(1, "week").startOf("week").toDate();
+      endDate = now.startOf("week").toDate();
       break;
     case "W": // This Week
-      startDate = moment().startOf("week").toDate();
-      endDate = moment().endOf("week").toDate();
+      startDate = now.startOf("week").toDate();
+      endDate = now.endOf("week").toDate();
       break;
     case "L7D": // Last Seven Days
-      startDate = moment().subtract(7, "days").startOf("day").toDate();
-      endDate = moment().startOf("day").toDate();
+      startDate = now.subtract(7, "days").startOf("day").toDate();
+      endDate = now.startOf("day").toDate();
       break;
     default:
       throw new Error("Invalid date filter");
