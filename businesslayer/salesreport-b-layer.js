@@ -68,8 +68,67 @@ module.exports = {
         } catch (err) {
             return { success: false, error: err.message };
         }
+    },
+    async getCategoryReport(requestDetails) {
+        const { dateFilter, store_id } = requestDetails.query;
+        try {
+            const filter = dateQuery(dateFilter);
+            const storeObjectId = new ObjectId(store_id);
+            const categoryPipeline = [
+                {
+                    $match: {
+                        store_id: storeObjectId,
+                        created_at: filter
+                    }
+                },
+                {
+                    $unwind: "$seats"
+                },
+                {
+                    $unwind: "$seats.orders"
+                },
+                {
+                    $group: {
+                        _id: "$seats.orders.category",
+                        totalAmount: { $sum: "$seats.orders.total" }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        name: "$_id",
+                        amount: "$totalAmount"
+                    }
+                }
+            ];
+    
+            const categoryResults = await getdb(CHECKS).aggregate(categoryPipeline).toArray();
+            const categorySales = categoryResults.reduce((acc, result) => {
+                if (result.name) {
+                    acc[result.name] = {
+                        name: result.name,
+                        amount: result.amount
+                    };
+                }
+                return acc;
+            }, {});
+    
+            return {
+                success: true,
+                result: {
+                    categorySales
+                }
+            };
+    
+        } catch (err) {
+            return { success: false, error: `Error generating report: ${err.message}` };
+        }
     }
+    
 };
+
+
+
 
 function dateQuery(dateFilter) {
     let startDate, endDate;
