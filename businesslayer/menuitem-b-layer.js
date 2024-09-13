@@ -141,7 +141,7 @@ module.exports = {
         });
     },
 
-    async readExcelAndUpdateDB(filePath) {
+    async readExcelAndUpdateDB(filePath,query) {
         try {
             const workbook = xlsx.readFile(filePath);
             const sheetName = workbook.SheetNames[0]; // Assuming you are processing the first sheet
@@ -154,7 +154,7 @@ module.exports = {
                 const data = xlData[i];
     
                 // Convert storeId to ObjectId
-                const storeId = ObjectId(data.storeId);
+                const storeId = ObjectId(query.store_id);
 
                 const nameRegex = new RegExp(`^${data.name}$`, 'i');
     
@@ -166,7 +166,6 @@ module.exports = {
                 if (data.category) {
                     const categoryRegex = new RegExp(`^${data.category}$`, 'i');
                     const getCategory = await getdb(CATEGORY).findOne({ name: categoryRegex, store_id: storeId });
-                    console.log(data.category,getCategory)
                     if (getCategory) {
                         category_id = getCategory._id;
                     } else {

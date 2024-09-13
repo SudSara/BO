@@ -84,9 +84,10 @@ router.get('/:id',(req, res, next) => {
 
 router.post('/bulkUpload', upload.single('menuitem-bulk-upload'), async (req, res, next) => {
     let newPath = __dirname.replace('/controller', '/');
+    console.log(req.file)
     const filePath = path.join(newPath, 'bulk-upload', req.file.filename); // Constructing the file path
     try {
-        const result = await menuitemsBusinessLayer.readExcelAndUpdateDB(filePath);
+        const result = await menuitemsBusinessLayer.readExcelAndUpdateDB(filePath,req.query);
         res.send(result);
     } catch (err) {
         next(err);
