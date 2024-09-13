@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const saleReportsLayer = require('../businesslayer/salesreport-b-layer');
+const saleReportsLayer = require('../../businesslayer/reports/sales-dashboard-report-b-layer');
 
 router.get('/sales',(req, res, next) => {
     saleReportsLayer
