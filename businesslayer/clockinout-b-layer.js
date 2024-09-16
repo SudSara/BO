@@ -3,171 +3,168 @@ const getdb = require('../database/db').getDb;
 const { ObjectId } = require('mongodb');
 
 module.exports = {
-
     async createClockInOut(clockInOut) {
-        clockInOut.store_id = ObjectId(clockInOut.store_id);
-        const timestamp = clockInOut.dateWithTime;
-        const dateObj = new Date(timestamp);
-        // Extract hours, minutes, and seconds
-        const hours = dateObj.getUTCHours();
-        const minutes = dateObj.getUTCMinutes();
-        
-        // Convert hours to 12-hour format
-        let formattedHours = hours % 12;
-        formattedHours = formattedHours ? formattedHours : 12; // Handle midnight (0 hours)
+        try {
+            clockInOut.store_id = ObjectId(clockInOut.store_id);
+            const queryPayload = { store_id: clockInOut.store_id, businessDate: clockInOut.businessDate };
 
-        // Determine AM/PM
-        const period = hours >= 12 ? 'PM' : 'AM';
+            let existingDocument = await getOrCreateDocument(queryPayload);
 
-        // Format the time
-        const formattedTime = `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-        const queryPayload = { store_id: clockInOut.store_id};
-        let existingDocument = await getdb(CLOCKINOUT).findOne(queryPayload);
+            let activeShiftRecordIndex = findActiveShiftRecordIndex(existingDocument.shiftRecords, clockInOut.employeeId);
 
-        if (!existingDocument) {
-            existingDocument = {
-                businessDate: clockInOut.businessDate,
-                shiftRecords: [],
-                created_at : new Date()
-            };
-        }
-
-        // Check if shiftRecords already has an entry for the employeeId
-        const existingShiftRecordIndex = existingDocument.shiftRecords.findIndex(record => record.employeeId === clockInOut.employeeId && !record.clockOutStatus);
-
-        if (existingShiftRecordIndex !== -1) {
-            // Update existing shift record with punchOutTime
-            const punchOutTime = formattedTime; // Update based on actual logic
-            existingDocument.shiftRecords[existingShiftRecordIndex].punchOutTime = punchOutTime;
-            existingDocument.shiftRecords[existingShiftRecordIndex].totalHours = calculatesShiftHours(existingDocument.shiftRecords[existingShiftRecordIndex].punchInTime, punchOutTime); // Example calculation for total hours
-            existingDocument.shiftRecords[existingShiftRecordIndex].clockOutStatus = true; // Example update status
-            existingDocument.shiftRecords[existingShiftRecordIndex].employeeId = clockInOut.employeeId;
-            existingDocument.shiftRecords[existingShiftRecordIndex].deviceID = clockInOut.deviceID;
-            existingDocument.shiftRecords[existingShiftRecordIndex].node = clockInOut.node;
-            
-        } else {
-            // Create new shift record
-            const newShiftRecord = {
-                employeeId:clockInOut.employeeId,
-                punchInTime: formattedTime, // Format as needed
-                punchOutTime: "12:00 AM", // Update based on actual punch out time logic
-                totalHours: "0:00", // Update with actual calculation
-                clockOutStatus: false,
-                eventID: "",
-                deviceID: clockInOut.deviceID,
-                node: clockInOut.node
-            };
-            existingDocument.shiftRecords.push(newShiftRecord);
-        }
-        existingDocument.updated_at = new Date();
-        existingDocument.totalHours = calculateTotalHours(existingDocument.shiftRecords);
-        return new Promise((resolve, reject) => {
-            getdb(CLOCKINOUT).updateOne(queryPayload, { $set: existingDocument }, { upsert: true }, async (err, result) => {
-                if (err) {
-                    return reject(err);
+            if (clockInOut.action === "IN") {
+                if (activeShiftRecordIndex !== -1) {
+                    return createResponse(false, "You are already clocked in and haven't clocked out yet.");
                 }
-                return resolve({ success: true, result: clockInOutResponse(clockInOut) });
-            })
-        })
+                existingDocument.shiftRecords.push(clockInOut);
+            } else if (clockInOut.action === "OUT") {
+                if (activeShiftRecordIndex === -1) {
+                    return createResponse(false, "No active clock-in found to clock out.");
+                }
+
+                let activeShiftRecord = existingDocument.shiftRecords[activeShiftRecordIndex];
+
+                if (!activeShiftRecord.isClockIn) {
+                    return createResponse(false, "You have already clocked out.");
+                }
+                updateShiftRecordForClockOut(activeShiftRecord, clockInOut.punchOutTime);
+                existingDocument.shiftRecords[activeShiftRecordIndex] = {
+                    ...activeShiftRecord,
+                    isClockIn: false,
+                    punchOutTime: clockInOut.punchOutTime
+                };
+            }
+
+            existingDocument.updated_at = new Date();
+            await updateDocument(queryPayload, existingDocument);
+
+            return createResponse(true, clockInOutResponse(clockInOut));
+        } catch (err) {
+            console.error("Error in createClockInOut:", err);
+            throw err;
+        }
     },
 
-    getAllClockInOuts(clockInData) {
-        const clockInDataQuery = {
-            store_id: ObjectId(clockInData.store_id),
-            businessDate:clockInData.businessDate
+    async getAllClockInOuts(clockInData) {
+        try {
+            const clockInDataQuery = {
+                store_id: ObjectId(clockInData.store_id),
+                businessDate: clockInData.businessDate
+            };
+            const result = await getdb(CLOCKINOUT).find(clockInDataQuery).toArray();
+            const shiftRecords = result.map(res => res.shiftRecords).flat();
+            return { success: true, result: shiftRecords };
+        } catch (err) {
+            console.error("Error fetching all clockInOuts:", err);
+            throw err;
         }
-        return new Promise((resolve, reject) => {
-            getdb(CLOCKINOUT).find(clockInDataQuery).toArray()
-                .then((result) => {
-                    const shiftRecords = result.map(results => results.shiftRecords).flat();
-                    resolve({ success: true, result : shiftRecords });
-                })
-                .catch((err) => {
-                    console.error("Error fetching all clockInOut:", err);
-                    reject(err);
-                });
-        });
-    },
-    getEmployeeClockInOuts(clockInData) {
-        const clockInDataQuery = {
-            store_id: ObjectId(clockInData.store_id),
-            businessDate:clockInData.businessDate
-        }
-        return new Promise((resolve, reject) => {
-            getdb(CLOCKINOUT).find(clockInDataQuery).toArray()
-                .then((result) => {
-                    console.log(result)
-                    const shiftRecordsFiltered = result[0].shiftRecords.filter(record => record.employeeId === clockInData.employeeId);
-                    resolve({ success: true, result : shiftRecordsFiltered });
-                })
-                .catch((err) => {
-                    console.error("Error fetching all clockInOut:", err);
-                    reject(err);
-                });
-        });
     },
 
+    async getEmployeeClockInOuts(clockInData) {
+        try {
+            const clockInDataQuery = {
+                store_id: ObjectId(clockInData.store_id),
+                businessDate: clockInData.businessDate
+            };
+            const result = await getdb(CLOCKINOUT).find(clockInDataQuery).toArray();
+            const shiftRecordsFiltered = result[0]?.shiftRecords.filter(record => record.employeeId === clockInData.employeeId) || [];
+            return { success: true, result: shiftRecordsFiltered };
+        } catch (err) {
+            console.error("Error fetching employee clockInOuts:", err);
+            throw err;
+        }
+    }
+};
+
+function findActiveShiftRecordIndex(shiftRecords, employeeId) {
+    return shiftRecords.findIndex(record => record.employeeId === employeeId && record.isClockIn);
+}
+
+function updateShiftRecordForClockOut(activeShiftRecord, formattedTime) {
+    activeShiftRecord.punchOutTime = formattedTime;
+    activeShiftRecord.totalHours = calculatesShiftHours(activeShiftRecord.punchInTime, formattedTime);
+}
+
+async function updateDocument(queryPayload, document) {
+    await getdb(CLOCKINOUT).updateOne(queryPayload, { $set: document }, { upsert: true });
+}
+
+function createResponse(success, message) {
+    return { success, message };
 }
 
 function clockInOutResponse(clockInOut) {
     return {
-        employeeID: clockInOut.employeeID,
+        employeeID: clockInOut.employeeId,
         action: clockInOut.action,
         businessDate: clockInOut.businessDate,
-        message: clockInOut.action === "OUT" ? false : true,
+        message: clockInOut.action === "OUT" ? "Clocked out successfully." : "Clocked in successfully."
     };
 }
 
-// Function to convert time string to milliseconds since midnight
+
+
+async function getOrCreateDocument(queryPayload) {
+    let document = await getdb(CLOCKINOUT).findOne(queryPayload);
+    if (!document) {
+        document = {
+            businessDate: queryPayload.businessDate,
+            shiftRecords: [],
+            created_at: new Date()
+        };
+    }
+    return document;
+}
+
+function findActiveShiftRecord(shiftRecords, employeeId) {
+    return shiftRecords.find(record => record.employeeId === employeeId && record.isClockIn);
+}
+
+function updateShiftRecordForClockOut(activeShiftRecord, formattedTime) {
+    activeShiftRecord.punchOutTime = formattedTime;
+    activeShiftRecord.totalHours = calculatesShiftHours(activeShiftRecord.punchInTime, formattedTime);
+    activeShiftRecord.clockOutStatus = true;
+    activeShiftRecord.action = "OUT";
+}
+
+async function updateDocument(queryPayload, document) {
+    await getdb(CLOCKINOUT).updateOne(queryPayload, { $set: document }, { upsert: true });
+}
+
+function createResponse(success, message) {
+    return { success, message };
+}
+
+function clockInOutResponse(clockInOut) {
+    return {
+        employeeID: clockInOut.employeeId,
+        action: clockInOut.action,
+        businessDate: clockInOut.businessDate,
+        message: clockInOut.action === "OUT" ? "Clocked out successfully." : "Clocked in successfully."
+    };
+}
+
 function timeStringToMs(timeStr) {
     const [time, period] = timeStr.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
-    
-    if (period === 'PM' && hours !== 12) {
-        hours += 12;
-    } else if (period === 'AM' && hours === 12) {
-        hours = 0;
-    }
-    
-    return hours * 3600000 + minutes * 60000;
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    return (hours * 3600000) + (minutes * 60000);
 }
 
-function calculatesShiftHours(punchInTime,punchOutTime) {
+function calculatesShiftHours(punchInTime, punchOutTime) {
     const startTimeMs = timeStringToMs(punchInTime);
     const endTimeMs = timeStringToMs(punchOutTime);
-    // Calculate the difference in milliseconds
     let durationMs = endTimeMs - startTimeMs;
-    
-    // Convert milliseconds difference to hours and minutes
+
+    if (durationMs < 0) {
+        durationMs += 24 * 3600000;
+    }
+
     const hours = Math.floor(durationMs / 3600000);
-    durationMs %= 3600000;
-    const minutes = Math.round(durationMs / 60000);
-    
-    // Format the total hours
-    const totalHours = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    return totalHours
+    const minutes = Math.round((durationMs % 3600000) / 60000);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
-function calculateTotalHours(shiftRecords) {
-    let totalHours = 0;
-    let totalMinutes = 0;
 
-    shiftRecords.forEach(record => {
-        const [hoursStr, minutesStr] = record.totalHours.split(':');
-        const hours = parseInt(hoursStr, 10);
-        const minutes = parseInt(minutesStr, 10);
 
-        totalHours += hours;
-        totalMinutes += minutes;
-    });
-
-    // Handle carryover from minutes to hours
-    totalHours += Math.floor(totalMinutes / 60);
-    totalMinutes %= 60;
-
-    // Format the result to HH:MM
-    const formattedHours = ('0' + totalHours).slice(-2);
-    const formattedMinutes = ('0' + totalMinutes).slice(-2);
-
-    return `${formattedHours}:${formattedMinutes}`;
-}
