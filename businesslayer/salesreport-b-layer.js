@@ -21,7 +21,7 @@ module.exports = {
                     ],
                     tenderSales: [
                         { $unwind: "$payments" },
-                        { $group: { _id: "$payments.paymentType", totalAmount: { $sum: "$payments.authorizedAmount" } } },
+                        { $group: { _id: "$payments.type", totalAmount: { $sum: "$payments.amount" } } },
                         { $project: { _id: 0, name: "$_id", amount: "$totalAmount" } },
                         { $sort: { name: 1 } }
                     ]

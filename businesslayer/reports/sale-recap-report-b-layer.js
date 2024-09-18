@@ -118,8 +118,8 @@ function paymentSummaryPipeline() {
     { $unwind: "$payments" },
     {
       $group: {
-        _id: "$payments.paymentType",
-        totalAuthorizedAmount: { $sum: "$payments.authorizedAmount" },
+        _id: "$payments.type",
+        totalAuthorizedAmount: { $sum: "$payments.amount" },
       },
     },
     {
