@@ -4,7 +4,8 @@
 const app = require('express')();
 const bodyparser = require('body-parser');
 const dotenv = require('dotenv');
-
+const cors = require('cors');
+app.use(cors());
 dotenv.config();
 const authHelper = require('./helper/authHelper');
 const { initDb } = require('./database/db');
