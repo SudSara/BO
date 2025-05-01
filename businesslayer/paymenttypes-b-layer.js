@@ -76,7 +76,6 @@ module.exports = {
             let { params, body } = paymentTypeRequest;
             body.store_id = ObjectId(body.store_id);
             body.updated_at = new Date();
-            body.store_id = ObjectId(body.store_id);
             // Convert paymentType_id to ObjectId
             let queryPayload = {
                 _id: ObjectId(params.paymentType_id)

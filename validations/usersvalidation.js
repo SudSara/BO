@@ -6,7 +6,7 @@ module.exports = {
     body('last_name').isString().optional(),
     body('phone_number').isMobilePhone('any', { strictMode: false }),
     body('isPunchIn').isBoolean().notEmpty(),
-    body('role').isString().notEmpty(),
+    body('role').isString().optional(),
     body('mail_id').isEmail().optional(),
     body('language').isArray().optional(),
     body('pin').isString().notEmpty(),
@@ -16,7 +16,7 @@ module.exports = {
   updateUserDetailValidation: () => [
     body('first_name').isString().notEmpty(),
     body('isPunchIn').isBoolean().notEmpty(),
-    body('role').isString().notEmpty(),
+    body('role').isString().optional(),
     body('emailId').isEmail().optional(),
     body('pin').isString().notEmpty(),
     body('empId').isString().optional(),

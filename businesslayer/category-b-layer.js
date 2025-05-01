@@ -68,7 +68,6 @@ module.exports = {
             let { params, body } = req;
             body.updated_at = new Date();
             body.store_id = ObjectId(body.store_id);
-    
             let queryPayload = {
                 _id: ObjectId(params.category_id),
             };

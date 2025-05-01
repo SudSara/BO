@@ -1,100 +1,289 @@
-const { USER_SECURE_DATA, CHECKS } = require('../helper/collection-name');
+const { CHECKS } = require('../helper/collection-name');
 const getdb = require('../database/db').getDb;
-const {redisClient} = require('../database/redish');
+const { redisClient } = require('../database/redish');
 const { ObjectId } = require('mongodb');
-
-module.exports = { 
-    createCheck(data){
-        data.created_at = new Date();
-        data.updated_at = new Date();
+const current_date = new Date();
+module.exports = {
+    async createCheck(data) {
+        // Initialize the data fields
+        data.updated_at = current_date;
         data.store_id = ObjectId(data.store_id);
-        return new Promise(async(resolve,reject)=>{
-            redisClient.publish("checks_data",JSON.stringify(data));
-            if(data.status == "CLOSED" || data.status == "VOID"){
-                getdb(CHECKS).insertOne(data,async (err,result)=>{
-                    if(err){
-                        return reject(err);
+        data.status = data.status.toLowerCase();
+        try {
+            // Publish data to Redis
+            redisClient.publish("checks_data", JSON.stringify(data));
+
+            // Define query payload based on the provided data
+            const queryPayload = {
+                id: data.id, // Assuming _id is used to find the existing check
+                store_id: data.store_id
+            };
+            if (data.status !== "active") {
+                // Check if the check exists
+                await redisUpdate(true,data);
+                const checkExists = await new Promise((resolve, reject) => {
+                    getdb(CHECKS).findOne(queryPayload, (err, document) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(document);
+                    });
+                });
+
+                if (checkExists) {
+                    // Update the existing check
+                    const updateResult = await new Promise((resolve, reject) => {
+                        getdb(CHECKS).updateOne(queryPayload, { $set: data }, (err, result) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            resolve(result);
+                        });
+                    });
+                    return { success: true, data };
+                } else {
+                    // Insert the new check if it does not exist
+                    data.created_at = current_date;
+                    const insertResult = await new Promise((resolve, reject) => {
+                        getdb(CHECKS).insertOne(data, (err, result) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            resolve(result);
+                        });
+                    });
+
+                    if (!insertResult.insertedId) {
+                        return { success: false, result: 'Failed to insert check' };
                     }
-                    return resolve({success:true,data});
-                })
-            }else{
-                await redisClient.rPush("checks_info",JSON.stringify(data));
-                return resolve({success:true,data});
-            }
-        })
-    },
-    async getCheckById(checks){
-        let { params} = checks;
-        queryPayload = {
-            '_id': ObjectId(params.id),
-        }
-        return new Promise((resolve,reject)=>{
-            getdb(CHECKS).findOne(queryPayload,async (err,result)=>{
-                if(err){
-                    return reject(err);
+
+                    return { success: true, data };
                 }
-                return resolve({success:true,result : result || {} });
-            });
-        })
+            } else {
+                // Handle the ACTIVE status case
+                // Check if the check exists before deletion
+                const checkExists = await new Promise((resolve, reject) => {
+                    getdb(CHECKS).findOne(queryPayload, (err, document) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(document);
+                    });
+                });
+
+                // Proceed to delete the check
+                const deleteResult = await new Promise((resolve, reject) => {
+                    getdb(CHECKS).deleteOne(queryPayload, (err, result) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(result);
+                    });
+                });
+                await redisUpdate(false,data);
+                // Push data to Redis
+                // await redisClient.del("checks_info");
+
+                return { success: true, data };
+            }
+        } catch (error) {
+            return { success: false, result: error.message };
+        }
     },
-    
-    getCheckByDateRange(body){
-        let { start_date, end_date, store_id, status } = body;
-        start_date = start_date ? parseDateFromString(start_date) : new Date();
-        end_date = end_date ? parseDateFromString(end_date) : new Date();
-        start_date.setHours(0, 0, 0, 0);
-        end_date.setHours(23, 59, 59, 999);
-        
-        const query = [
+
+    getAllChecks(payloadDetail) {
+        let { params, query } = payloadDetail;
+        let checkPayloadDetail = {};
+        if (params.store_id) {
+            checkPayloadDetail.store_id = ObjectId(params.store_id);
+        }
+        if (query.status) {
+            checkPayloadDetail.status = query.status.toLowerCase();
+        }
+        if (query.businessDate) {
+            checkPayloadDetail.businessDate = query.businessDate;
+        }else{
+            checkPayloadDetail.businessDate = formatDate(current_date)
+        }
+
+        const pipeline = [
             {
-                $match: {
-                    created_at: {
-                        $gte: start_date,
-                        $lte: end_date,
+                $match: checkPayloadDetail
+            },
+            {
+                $group: {
+                    _id: null,  // Grouping by null to get total for all documents
+                    total: { $sum: "$total" },
+                    customer: { $sum: 1 },  // Counting the number of documents
+                    totalDuration: { $sum: "$duration" },  // Summing the durations
+                    checks: { $push: "$$ROOT" }  // Collecting all matching documents
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    total: {
+                        $concat: [{ $toString: "$total" }]
                     },
-                    'store_id': ObjectId(store_id)
+                    avg: {
+                        $cond: {
+                            if: { $gt: ["$customer", 0] },
+                            then: {
+                                $concat: [
+                                    {
+                                        $toString: {
+                                            $round: [{ $divide: ["$total", "$customer"] }, 2]
+                                        }
+                                    }
+                                ]
+                            },
+                            else: 'Rs.0.00'
+                        }
+                    },
+                    averageDuration: {
+                        $cond: {
+                            if: { $gt: ["$customer", 0] },
+                            then: {
+                                $concat: [
+                                    {
+                                        $toString: {
+                                            $round: [{
+                                                $divide: ["$totalDuration", "$customer"]
+                                            }, 0]
+                                        }
+                                    },
+                                    ' ms'
+                                ]
+                            },
+                            else: '0 ms'
+                        }
+                    },
+                    customer: 1,
+                    checks: 1
                 }
             }
         ];
-        return new Promise(async(resolve,reject)=>{
-            getdb(CHECKS).aggregate(query).toArray((err,result)=>{
-                if(err){
+
+        return new Promise((resolve, reject) => {
+            getdb(CHECKS).aggregate(pipeline).toArray()
+                .then((result) => {
+                    const averageDurationMs = result.length > 0 ? result[0].averageDuration : 0;
+                    const averageDuration = formatDuration(averageDurationMs);
+                    const response = {
+                        total: result.length > 0 ? result[0].total : '0.00',
+                        avg: result.length > 0 ? result[0].avg : '0.00',
+                        averageDuration,
+                        customer: result.length > 0 ? result[0].customer : 0,
+                        checks: result.length > 0 ? result[0].checks : []
+                    };
+                    resolve({ success: true, result: response});
+                })
+                .catch((err) => {
+                    console.error("Error fetching all categories:", err);
+                    reject(err);
+                });
+        });
+    },
+    async getCheckById(checks) {
+        let { params } = checks;
+        queryPayload = {
+            '_id': ObjectId(params.id),
+        }
+        return new Promise((resolve, reject) => {
+            getdb(CHECKS).findOne(queryPayload, async (err, result) => {
+                if (err) {
                     return reject(err);
                 }
-                return resolve({success:true,result});
+                return resolve({ success: true, result: result || {} });
             });
         })
     },
-    async getCheckByDateRangewithactive(body){
-        return new Promise(async(resolve,reject)=>{ 
-            let { start_date, end_date, store_id, status } = body;
-            start_date = start_date ? parseDateFromString(start_date) : new Date();
-            end_date = end_date ? parseDateFromString(end_date) : new Date();
-            start_date.setHours(0, 0, 0, 0);
-            end_date.setHours(23, 59, 59, 999);
-            
+
+    getCheckByDateRange(checkDetails) {
+        let { businessDate, store_id } = checkDetails.query;
+        const query = [
+            {
+                $match: {
+                    'store_id': ObjectId(store_id),
+                    'businessDate': businessDate || formatDate(current_date)
+                }
+            }
+        ];
+        return new Promise(async (resolve, reject) => {
+            getdb(CHECKS).aggregate(query).toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve({ success: true, result });
+            });
+        })
+    },
+    async getCheckByDateRangewithactive(checkDetails) {
+        return new Promise(async (resolve, reject) => {
+            let { businessDate, store_id } = checkDetails.query;
             let data = await redisClient.lRange("checks_info", 0, -1);
             let c_data = JSON.parse(`[${data}]`);
-            let res_data = c_data.filter(d=> d.store_id ==store_id && new Date(d.created_at).getTime() > new Date(start_date).getTime() && new Date(d.created_at).getTime() < new Date(end_date).getTime() )
-            resolve({success:true,result:res_data})
+            let res_data = c_data.filter(d => d.store_id == store_id && (d.businessDate === (businessDate || formatDate(current_date))))
+            resolve({ success: true, result: res_data })
         })
- 
-        // return new Promise(async(resolve,reject)=>{
-        //     getdb(CHECKS).aggregate(query).toArray((err,result)=>{
-        //         if(err){
-        //             return reject(err);
-        //         }
-        //         return resolve({success:true,result});
-        //     });
-        // })
     }
 }
 
-function parseDateFromString(dateString) {
-    const parts = dateString.split('-');
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; 
-    const year = parseInt(parts[2], 10);
-    return new Date(year, month, day,0,0,0,0);
+async function redisUpdate(isDelete, data) {
+    try {
+        // Fetch the entire list from Redis
+        const existingCheckDetails = await redisClient.lRange('checks_info', 0, -1);
+
+        // Parse existing data only once
+        const existingChecks = existingCheckDetails.map(check => JSON.parse(check));
+        
+        // Create a map for quick ID lookups
+        const checkMap = new Map(existingChecks.map(check => [check.id, check]));
+
+        if (isDelete) {
+            // Remove the item with the specified ID
+            checkMap.delete(data.id);
+        } else {
+            // Update or add the new data
+            checkMap.set(data.id, data);
+        }
+
+        // Convert the updated map back to an array of JSON strings
+        const updatedList = Array.from(checkMap.values()).map(item => JSON.stringify(item));
+
+        // Overwrite the entire list in Redis
+        await redisClient.del('checks_info'); // Clear the old list
+        if (updatedList.length > 0) {
+            await redisClient.rPush('checks_info', updatedList); // Push the updated list
+        }
+
+        console.log('List updated successfully');
+    } catch (error) {
+        console.error('Error updating the list:', error);
+    }
 }
-  
+
+function formatDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth() returns month from 0-11
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
+}
+// Function to format duration from milliseconds to "HH hrs MM:SS"
+function formatDuration(ms) {
+    let num = parseInt(ms);
+    const hours = Math.floor(num / 3600000); // Convert milliseconds to hours
+    const minutes = Math.floor((num % 3600000) / 60000); // Convert remaining milliseconds to minutes
+    const seconds = Math.floor((num % 60000) / 1000); // Convert remaining milliseconds to seconds
+
+    // Format hours, minutes, and seconds to always have two digits
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+
+    return `${formattedHours}:${formattedMinutes}`;
+}
+
+
+

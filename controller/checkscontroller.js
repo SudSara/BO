@@ -13,31 +13,41 @@ router.post('/',(req, res, next) => {
     });
 });
 
+router.get('/store/:store_id',(req,res,next)=>{
+  console.log("hai")
+  checksBusinessLayer.getAllChecks(req).then((data)=>{
+  res.send(data)
+})
+.catch((err)=>{
+  next(err);
+})
+});
+
+router.get('/getCheckByBusinessdate',(req,res,next)=>{
+    checksBusinessLayer.getCheckByDateRange(req).then((data)=>{
+    res.send(data)
+  })
+  .catch((err)=>{
+    next(err);
+  })
+});
+
+router.get('/getActiveByDate',(req,res,next)=>{
+  checksBusinessLayer.getCheckByDateRangewithactive(req).then((data)=>{
+    res.send(data)
+  })
+  .catch((err)=>{
+    next(err);
+  })
+});
+
 router.get('/:id',(req,res,next)=>{
-    checksBusinessLayer.getCheckById(req).then((data)=>{
-    res.send(data)
-  })
-  .catch((err)=>{
-    next(err);
-  })
-});
-
-router.post('/getbydate',(req,res,next)=>{
-    checksBusinessLayer.getCheckByDateRange(req.body).then((data)=>{
-    res.send(data)
-  })
-  .catch((err)=>{
-    next(err);
-  })
-});
-
-router.post('/getbydate/active',(req,res,next)=>{
-  checksBusinessLayer.getCheckByDateRangewithactive(req.body).then((data)=>{
-    res.send(data)
-  })
-  .catch((err)=>{
-    next(err);
-  })
+  checksBusinessLayer.getCheckById(req).then((data)=>{
+  res.send(data)
+})
+.catch((err)=>{
+  next(err);
+})
 });
 
 module.exports = router;
